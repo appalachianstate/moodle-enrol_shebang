@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="enrol/shebang/db" VERSION="20100120" COMMENT="XMLDB file for Moodle enrol/shebang"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+  <TABLES>
+
+    <TABLE NAME="enrol_shebang_term" COMMENT="Terms as reported by LMB/Banner" NEXT="enrol_shebang_dept">
+      <FIELDS>
+        <FIELD NAME="id"                TYPE="int"      LENGTH="10"     NOTNULL="true"  UNSIGNED="false"                SEQUENCE="true"  ENUM="false" COMMENT="Table key value" NEXT="source_id"/>
+        <FIELD NAME="source_id"         TYPE="char"     LENGTH="50"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Source system key value" PREVIOUS="id" NEXT="desc_short"/>
+        <FIELD NAME="desc_short"        TYPE="char"     LENGTH="60"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Term short descritpion" PREVIOUS="source_id" NEXT="desc_long"/>
+        <FIELD NAME="desc_long"         TYPE="char"     LENGTH="255"    NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Term long description" PREVIOUS="desc_short" NEXT="begin_date"/>
+        <FIELD NAME="begin_date"        TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Term start date" PREVIOUS="desc_long" NEXT="end_date"/>
+        <FIELD NAME="end_date"          TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Term end date" PREVIOUS="begin_date" NEXT="category_id"/>
+        <FIELD NAME="category_id"       TYPE="int"      LENGTH="10"     NOTNULL="true"                      DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="Term end date" PREVIOUS="end_date" NEXT="insert_date"/>
+        <FIELD NAME="insert_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="category_id" NEXT="update_date"/>
+        <FIELD NAME="update_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="insert_date"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="xak1" UNIQUE="true" FIELDS="source_id" COMMENT="Alternate key 1"/>
+      </INDEXES>      
+    </TABLE>
+ 
+   <TABLE NAME="enrol_shebang_dept" COMMENT="Departments as reported by LMB/Banner" PREVIOUS="enrol_shebang_term" NEXT="enrol_shebang_section">
+      <FIELDS>
+        <FIELD NAME="id"                TYPE="int"      LENGTH="10"     NOTNULL="true"  UNSIGNED="false"                SEQUENCE="true"  ENUM="false" COMMENT="Table key value" NEXT="name"/>
+        <FIELD NAME="name"              TYPE="char"     LENGTH="100"    NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Source system key value" PREVIOUS="id" NEXT="category_id"/>
+        <FIELD NAME="category_id"       TYPE="int"      LENGTH="10"     NOTNULL="true"                      DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="Term end date" PREVIOUS="name" NEXT="insert_date"/>
+        <FIELD NAME="insert_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="category_id" NEXT="update_date"/>
+        <FIELD NAME="update_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="insert_date"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="xak1" UNIQUE="true" FIELDS="name" COMMENT="Alternate key 1"/>
+      </INDEXES>      
+    </TABLE>
+
+    <TABLE NAME="enrol_shebang_section" COMMENT="Banner-SCT Course Sections" PREVIOUS="enrol_shebang_dept" NEXT="enrol_shebang_person">
+      <FIELDS>
+        <FIELD NAME="id"                TYPE="int"      LENGTH="10"     NOTNULL="true"  UNSIGNED="false"                SEQUENCE="true"  ENUM="false" COMMENT="Table key value" NEXT="source_id"/>
+        <FIELD NAME="source_id"         TYPE="char"     LENGTH="50"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Unique section id number from Banner" PREVIOUS="id" NEXT="term"/>
+        <FIELD NAME="term"              TYPE="char"     LENGTH="50"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Related Banner term code" PREVIOUS="source_id" NEXT="course_source_id"/>
+        <FIELD NAME="course_source_id"  TYPE="char"     LENGTH="50"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Related Banner course code" PREVIOUS="term" NEXT="desc_short"/>
+        <FIELD NAME="desc_short"        TYPE="char"     LENGTH="60"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Section short description" PREVIOUS="course_source_id" NEXT="desc_long"/>
+        <FIELD NAME="desc_long"         TYPE="char"     LENGTH="255"    NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Section short description" PREVIOUS="desc_short" NEXT="desc_full"/>
+        <FIELD NAME="desc_full"         TYPE="char"     LENGTH="2000"   NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Section short description" PREVIOUS="desc_long" NEXT="dept_name"/>
+        <FIELD NAME="dept_name"         TYPE="char"     LENGTH="100"    NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Org-Dept name" PREVIOUS="desc_full" NEXT="begin_date"/>
+        <FIELD NAME="begin_date"        TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="The start date of the section" PREVIOUS="dept_name" NEXT="end_date"/>
+        <FIELD NAME="end_date"          TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="End date of the section" PREVIOUS="begin_date" NEXT="insert_date"/>
+        <FIELD NAME="insert_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="end_date" NEXT="update_date"/>
+        <FIELD NAME="update_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="insert_date"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="xak1" UNIQUE="true" FIELDS="source_id" COMMENT="Alternate key 1"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="enrol_shebang_person" COMMENT="Banner-SCT Persons" PREVIOUS="enrol_shebang_section" NEXT="enrol_shebang_member">
+      <FIELDS>
+        <FIELD NAME="id"                TYPE="int"      LENGTH="10"     NOTNULL="true"  UNSIGNED="false"                SEQUENCE="true"  ENUM="false" COMMENT="Table key value" NEXT="source_id"/>
+        <FIELD NAME="source_id"         TYPE="char"     LENGTH="50"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Luminis Id for person" PREVIOUS="id" NEXT="userid_logon"/>
+        <FIELD NAME="userid_logon"      TYPE="char"     LENGTH="32"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Userid-Logon Id" PREVIOUS="source_id" NEXT="userid_sctid"/>
+        <FIELD NAME="userid_sctid"      TYPE="char"     LENGTH="32"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Userid-BannerSCT Id" PREVIOUS="userid_logon" NEXT="userid_email"/>
+        <FIELD NAME="userid_email"      TYPE="char"     LENGTH="32"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Userid-BannerSCT Id" PREVIOUS="userid_sctid" NEXT="full_name"/>
+        <FIELD NAME="full_name"         TYPE="char"     LENGTH="128"    NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Full name" PREVIOUS="userid_email" NEXT="family_name"/>
+        <FIELD NAME="family_name"       TYPE="char"     LENGTH="128"    NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Family name" PREVIOUS="full_name" NEXT="given_name"/>
+        <FIELD NAME="given_name"        TYPE="char"     LENGTH="128"    NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Given (first) name" PREVIOUS="family_name" NEXT="email"/>
+        <FIELD NAME="email"             TYPE="char"     LENGTH="64"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Email address" PREVIOUS="given_name" NEXT="telephone"/>
+        <FIELD NAME="telephone"         TYPE="char"     LENGTH="32"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Telephone number" PREVIOUS="email" NEXT="street"/>
+        <FIELD NAME="street"            TYPE="char"     LENGTH="128"    NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Street address" PREVIOUS="telephone" NEXT="locality"/>
+        <FIELD NAME="locality"          TYPE="char"     LENGTH="64"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="City, town, etc." PREVIOUS="street" NEXT="country"/>
+        <FIELD NAME="country"           TYPE="char"     LENGTH="64"     NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Country" PREVIOUS="locality" NEXT="major"/>
+        <FIELD NAME="major"             TYPE="char"     LENGTH="128"    NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Country" PREVIOUS="country" NEXT="recstatus"/>
+        <FIELD NAME="recstatus"         TYPE="char"     LENGTH="1"      NOTNULL="false"                                 SEQUENCE="false" ENUM="false" COMMENT="Last recstatus received" PREVIOUS="major" NEXT="insert_date"/>
+        <FIELD NAME="insert_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="recstatus" NEXT="update_date"/>
+        <FIELD NAME="update_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="insert_date"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="xak1" UNIQUE="true" FIELDS="source_id"    COMMENT="Aternate key 1" NEXT="xak2" />
+        <INDEX NAME="xak2" UNIQUE="true" FIELDS="userid_logon" COMMENT="Aternate key 2" PREVIOUS="xak1" NEXT="xak3"/>
+        <INDEX NAME="xak3" UNIQUE="true" FIELDS="userid_sctid" COMMENT="Aternate key 3" PREVIOUS="xak2"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="enrol_shebang_member" COMMENT="Course section enrollments" PREVIOUS="enrol_shebang_person" NEXT="enrol_shebang_crosslist">
+      <FIELDS>
+        <FIELD NAME="id"                TYPE="int"      LENGTH="10"     NOTNULL="true"  UNSIGNED="false"                SEQUENCE="true"  ENUM="false" COMMENT="Table key value" NEXT="section_source_id"/>
+        <FIELD NAME="section_source_id" TYPE="char"     LENGTH="50"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Unique section id number from Banner" PREVIOUS="id" NEXT="person_source_id"/>
+        <FIELD NAME="person_source_id"  TYPE="char"     LENGTH="50"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Luminis Id for person" PREVIOUS="section_source_id" NEXT="roletype"/>
+        <FIELD NAME="roletype"          TYPE="char"     LENGTH="2"      NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Role code for the membership" PREVIOUS="person_source_id" NEXT="recstatus"/>
+        <FIELD NAME="recstatus"         TYPE="int"      LENGTH="1"      NOTNULL="true"  UNSIGNED="true"     DEFAULT="1" SEQUENCE="false" ENUM="false" COMMENT="Action code (add/update/delete)" PREVIOUS="roletype" NEXT="status"/>
+        <FIELD NAME="status"            TYPE="int"      LENGTH="1"      NOTNULL="true"  UNSIGNED="true"     DEFAULT="1" SEQUENCE="false" ENUM="false" COMMENT="Active or Inactive" PREVIOUS="recstatus" NEXT="insert_date"/>
+        <FIELD NAME="insert_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="When Inserted" PREVIOUS="status" NEXT="update_date"/>
+        <FIELD NAME="update_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="insert_date"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="xak1" UNIQUE="true" FIELDS="section_source_id,person_source_id,roletype" COMMENT="Alternate key 1"/>
+      </INDEXES>
+    </TABLE>
+    
+    <TABLE NAME="enrol_shebang_crosslist" COMMENT="Course cross-listing" PREVIOUS="enrol_shebang_member">
+      <FIELDS>
+        <FIELD NAME="id"                TYPE="int"      LENGTH="10"     NOTNULL="true"  UNSIGNED="false"                SEQUENCE="true"  ENUM="false" COMMENT="Table key value" NEXT="parent_source_id"/>
+        <FIELD NAME="parent_source_id"  TYPE="char"     LENGTH="50"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="The parent section source_id" PREVIOUS="id" NEXT="child_source_id"/>
+        <FIELD NAME="child_source_id"   TYPE="char"     LENGTH="50"     NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="The child section source_id" PREVIOUS="parent_source_id" NEXT="recstatus"/>
+        <FIELD NAME="recstatus"         TYPE="int"      LENGTH="1"      NOTNULL="true"  UNSIGNED="true"     DEFAULT="1" SEQUENCE="false" ENUM="false" COMMENT="Action code (add/update/delete)" PREVIOUS="child_source_id" NEXT="status"/>
+        <FIELD NAME="status"            TYPE="int"      LENGTH="1"      NOTNULL="true"  UNSIGNED="true"     DEFAULT="1" SEQUENCE="false" ENUM="false" COMMENT="Active or Inactive" PREVIOUS="recstatus" NEXT="group_id"/>
+        <FIELD NAME="group_id"          TYPE="int"      LENGTH="10"     NOTNULL="true"                      DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="Associated parent course group" PREVIOUS="status" NEXT="insert_date"/>
+        <FIELD NAME="insert_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="When inserted" PREVIOUS="group_id" NEXT="update_date"/>
+        <FIELD NAME="update_date"       TYPE="datetime"                 NOTNULL="true"                                  SEQUENCE="false" ENUM="false" COMMENT="Last updated" PREVIOUS="insert_date"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="xak1" UNIQUE="true"  FIELDS="child_source_id"  NEXT="xie1"/>
+        <INDEX NAME="xie1" UNIQUE="false" FIELDS="parent_source_id" PREVIOUS="xak1"/>
+      </INDEXES>
+    </TABLE>
+
+  </TABLES>
+
+</XMLDB>
