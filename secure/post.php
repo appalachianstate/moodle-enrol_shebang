@@ -19,41 +19,53 @@
      * @author      Fred Woolard <woolardfa@appstate.edu>
      * @copyright   (c) 2010 Appalachian State Universtiy, Boone, NC
      * @license     GNU General Public License version 3
-     * @package     enrol/shebang
+     * @package     enrol
+     * @subpackage  shebang
      */
 
+
+    // Only interested in POSTs
+    if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+        header("HTTP/1.0 405 Method Not Allowed");
+        header("Allow: POST");
+        die;
+    }
 
     // Point of entry for the LMB posted message, so gotta get Moodle going.
     // Expect that this file is in enrol/shebang/secure (three dirs down from
     // the Moodle rootdir).
     require_once (dirname(__FILE__) . '/../../../config.php');
+    // We may end up creating a course group
+    require_once($CFG->dirroot . '/group/lib.php');
     // And we want our enrollment module too
-    require_once (dirname(__FILE__) . '/../enrol.php');
+    require_once (dirname(__FILE__) . '/../lib.php');
 
-   
+
     if (!defined('SHEBANG_SECURE_REALM')) define ('SHEBANG_SECURE_REALM', 'SHEBanG Authentication');
     if (!defined('SHEBANG_HEADER_MSGID')) define ('SHEBANG_HEADER_MSGID', 'JMSMessageId');
     if (!defined('SHEBANG_HEADER_LDISP')) define ('SHEBANG_HEADER_LDISP', 'ldisp_id');
-    
-    $enrolment_plugin = new enrolment_plugin_shebang();
+
+
+    $enrolment_plugin = new enrol_shebang_plugin();
 
 
     // First check if this plugin is enabled
-    if (!$enrolment_plugin->enabled()) {
+    if (!enrol_is_enabled('shebang')) {
         header("HTTP/1.0 501 Not Implemented");
         die;
-    }    
+    }
 
     // If enabled, then check for application-level security
     if (!check_security($enrolment_plugin->getSecureUsername(),
                         $enrolment_plugin->getSecurePassword(),
-                        $enrolment_plugin->getSecureMethod() == enrolment_plugin_shebang::OPT_SECURE_METHOD_BASIC)) {
+                        $enrolment_plugin->getSecureMethod() == enrol_shebang_plugin::OPT_SECURE_METHOD_BASIC)) {
         die;
     }
 
     // If we get to this point, then security checks, if any, are satisfied
     if (!($msg_headers = getallheaders())) {
-        die(get_string('ERR_MSG_NOHEADERS', enrolment_plugin_shebang::PLUGIN_PATH));
+        header("HTTP/1.0 400 Bad Request");
+        die(get_string('ERR_MSG_NOHEADERS', enrol_shebang_plugin::PLUGIN_NAME));
     }
 
     $msg_id  = array_key_exists(SHEBANG_HEADER_LDISP, $msg_headers)
@@ -68,18 +80,18 @@
 
     exit; /* End of page processing
     -------------------------------------------------------------------------------- */
-    
-    
 
-    
+
+
+
     /* --------------------------------------------------------------------------------
      * Page helper functions
      */
-    
+
 
     /**
      * Check credentials if needed
-     * 
+     *
      * @param   string      $username       User name to check
      * @param   string      $password       Password to check
      * @param   boolean     $basic_method   User HTTP Basic authentication (default is Digest)
@@ -90,7 +102,7 @@
 
         // No username and no password, then it is unprotected
         if (empty($username) && empty($userpwd)) {
-            return true;   
+            return true;
         }
 
         // If they configured BASIC auth, do that, otherwise do DIGEST
@@ -99,12 +111,12 @@
             if (   isset($_SERVER['PHP_AUTH_USER']) && !empty($_SERVER['PHP_AUTH_USER'])
                 && $_SERVER['PHP_AUTH_USER'] === $username
                 && $_SERVER['PHP_AUTH_PW']   === $userpwd) {
-                    
+
                 return true;
             }
 
             // Either credentials not there or they didn't match so
-            // arrange to send a 401 header with Basic auth header 
+            // arrange to send a 401 header with Basic auth header
             header("WWW-Authenticate: Basic realm=\"" . SHEBANG_SECURE_REALM . "\"");
 
         } else {
@@ -117,30 +129,30 @@
             }
 
             // Either credentials not there or they didn't match so
-            // arrange to send a 401 header with Digest auth header 
+            // arrange to send a 401 header with Digest auth header
             header("WWW-Authenticate: Digest realm=\"" . SHEBANG_SECURE_REALM . "\",qop=\"auth\",nonce=\"" . uniqid() ."\",opaque=\"" . md5(SHEBANG_SECURE_REALM) ."\"");
 
         }
-        
+
         // Dropped through to here when credentials not present or
         // they did not match, so WWW-Authenticate header of the
         // correct flavor should already be set, set the 401 header
         // the cancel message and return false so the page will die
         header("HTTP/1.0 401 Unauthorized");
         echo "Authentication Failed";
-        
+
         return false;
 
     } // check_security
 
-    
-    
+
+
     /**
      * Examine an HTTP Digest authentication server variable and check
      * the credentials. This routine was lifted from the online PHP
      * Manual (http://php.net/manual/en/features.http-auth.php) Example
      * No. 7.
-     * 
+     *
      * @param   string  $digest_server_var  The PHP_AUTH_DIGEST server var
      * @param   string  $username           The username against which to check
      * @param   string  $userpwd            The password against which to check
@@ -149,7 +161,7 @@
      */
     function digest_response_matches($digest_server_var, $username, $userpwd, $request_method)
     {
-        
+
         // Need to see each of these elements in the PHP_AUTH_DIGEST
         // server var. Set up an assoc. array with the keys that are
         // needed--the value part isn't important, just use a dummy
@@ -158,7 +170,7 @@
                               'username'=>1, 'uri'=>1, 'response'=>1);
         preg_match_all('@(' . implode('|', array_keys($needed_parts)) . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))@',
           $digest_server_var, $matches, PREG_SET_ORDER);
-    
+
         // Where we got a match, the element is present in the digest
         // server var, so copy it to the $data array and remove from
         // the $needed_parts array
@@ -167,18 +179,18 @@
             $data[$m[1]] = $m[3] ? $m[3] : $m[4];
             unset($needed_parts[$m[1]]);
         }
-    
+
         // If there were any elements missing in the digest server var
         // the corresponding key will still be present in the array
         if ($needed_parts) return false;
-        
+
         // Generate the valid response from our perspective, and that
         // should match the response element passed in the digest server
-        // var 
+        // var
         $a1 = md5($username . ':' . SHEBANG_SECURE_REALM . ':' . $userpwd);
         $a2 = md5($request_method . ':' . $data['uri']);
         $valid_response = md5($a1 . ':' . $data['nonce'] . ':' . $data['nc'] . ':' . $data['cnonce'] . ':' . $data['qop'] . ':' .$a2);
-        
+
         // If their response matches our response, let 'em in
         return ($data['response'] === $valid_response);
 

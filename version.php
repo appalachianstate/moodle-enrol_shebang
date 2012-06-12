@@ -1,5 +1,7 @@
 <?php
 
+    defined('MOODLE_INTERNAL') || die();
+
     /**
      * SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
      *
@@ -19,7 +21,8 @@
      * @author      Fred Woolard <woolardfa@appstate.edu>
      * @copyright   (c) 2010 Appalachian State Universtiy, Boone, NC
      * @license     GNU General Public License version 3
-     * @package     enrol/shebang
+     * @package     enrol
+     * @subpackage  shebang
      */
 
     /**
@@ -28,9 +31,9 @@
      * during site plugins administration.
      */
 
-    $plugin = new stdClass();
+    $plugin             = new stdClass();
 
-    $plugin->version    = 2010052002;
-    $plugin->requires   = 2007101590;
-
-    $plugin->release    = "0.0.1";
+    $plugin->version    = 2011031701;
+    $plugin->requires   = 2010000000;
+    $plugin->release    = "0.0.2";
+    $plugin->cron       = 1;

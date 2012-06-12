@@ -19,30 +19,33 @@
      * @author      Fred Woolard <woolardfa@appstate.edu>
      * @copyright   (c) 2010 Appalachian State Universtiy, Boone, NC
      * @license     GNU General Public License version 3
-     * @package     enrol/shebang
+     * @package     enrol
+     * @subpackage  shebang
      */
 
 
     // Get Moodle going
     require_once(dirname(__FILE__) . '/../../config.php');
-    
-    // Need our particular enrollment plugin's consts 
-    require_once(dirname(__FILE__) . '/enrol.php');
-    
+    // We may end up creating a course group
+    require_once($CFG->dirroot . '/group/lib.php');
+
+    // Need our particular enrollment plugin's consts
+    require_once(dirname(__FILE__) . '/lib.php');
+
     // No anonymous access for this page
     require_login();
 
     // Must be a site administrator
     require_capability('moodle/site:config', get_system_context());
 
-    
+
     $action             = optional_param('action', 'index', PARAM_ALPHA);
-    $tool_class_name    = enrolment_plugin_shebang::PLUGIN_NAME . "_tools_{$action}";
+    $tool_class_name    = enrol_shebang_plugin::PLUGIN_NAME . "_tools_{$action}";
 
-    if (file_exists(dirname(__FILE__) . "/tools/tools_{$action}_class.php")) {
-
-        include_once(dirname(__FILE__) . "/tools/tools_{$action}_class.php");
-        $tool = new $tool_class_name();
-        $tool->handle_request();
-
+    if (!file_exists(dirname(__FILE__) . "/tools/tools_{$action}_class.php")) {
+        $action = 'index';
     }
+
+    include(dirname(__FILE__) . "/tools/tools_{$action}_class.php");
+    $tool = new $tool_class_name();
+    $tool->handle_request();

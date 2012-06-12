@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="enrol/shebang/db" VERSION="20100120" COMMENT="XMLDB file for Moodle enrol/shebang"
+<XMLDB PATH="enrol/shebang/db" VERSION="2011031700" COMMENT="XMLDB file for Moodle enrol/shebang"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
   <TABLES>
@@ -107,9 +107,6 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" COMMENT="Primary key"/>
       </KEYS>
-      <INDEXES>
-        <INDEX NAME="xak1" UNIQUE="true" FIELDS="section_source_id,person_source_id,roletype" COMMENT="Alternate key 1"/>
-      </INDEXES>
     </TABLE>
     
     <TABLE NAME="enrol_shebang_crosslist" COMMENT="Course cross-listing" PREVIOUS="enrol_shebang_member">

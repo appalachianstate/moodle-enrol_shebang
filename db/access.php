@@ -25,23 +25,7 @@
      * @subpackage  shebang
      */
 
-    /**
-     * Handle database updates
-     *
-     * @param   int         $oldversion     The currently recorded version for this mod/plugin
-     * @return  boolean
-     */
-    function xmldb_enrol_shebang_upgrade($oldversion=0) {
-
-        global $db;
-
-
-
-        $result = true;
-
-        if ($oldversion < 0000000000) {
-        }
-
-        return $result;
-
-    } // xmldb_enrol_shebang_upgrade
+    $capabilities = array(
+        'enrol/shebang:unenrol' => array('captype'      => 'write',
+                                         'contextlevel' => CONTEXT_COURSE,
+                                         'legacy' => array()));

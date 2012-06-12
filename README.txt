@@ -2,7 +2,7 @@
  
  DISCLAIMER AND LICENSING
  ------------------------
- SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
+ SHEBanG enrollment plugin for SunGard HE Banner(r) data import
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  
  GENERAL INFORMATION
  -------------------
- The SHEBanG enrolment plugin is designed to import Luminis Message
+ The SHEBanG enrollment plugin is designed to import Luminis Message
  Broker (LMB) messages containing data sent from a SunGard HE Banner
  installation. The messages are POSTed by LMB to a specified URL;
  that URL should end up resolving to enrol/shebang/secure/post.php
@@ -29,7 +29,7 @@
 
  There already is an enrolment plugin, LMB, developed by Eric Merrill
  <merrill@oakland.edu> that processes Banner data, and has many more
- configuration options and features. We have been using Eric's plugin
+ configuration options and features. We have been using this plugin
  for several years at Appalachian State with only a few basic alter-
  ations.
 
@@ -82,12 +82,13 @@
  notifications page (Admin block->Notifications) to initiate database
  setup.
  
- Enable and configure the plugin (Courses->Enrolments->SHEBanG[Edit]). 
+ Enable and configure the plugin, using the admin menu:
+  Site Administration->Plugins->Enrolments->Manage enrol plugins
  
  Configure your Banner/LMB to POST messages to the URL corresponding
  to the enrol/shebang/secure/post.php file, for example:
  
-   http://moodle.someuniversity.edu/enrol/shebang/secure/post.php
+   https://moodle.someuniversity.edu/enrol/shebang/secure/post.php
  
       * * * * * * * * *   I M P O R T A N T   * * * * * * * * *      
 
