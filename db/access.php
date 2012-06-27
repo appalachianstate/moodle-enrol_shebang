@@ -1,7 +1,5 @@
 <?php
 
-    defined('MOODLE_INTERNAL') || die();
-
     /**
      * SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
      *
@@ -24,6 +22,9 @@
      * @package     enrol
      * @subpackage  shebang
      */
+
+    defined('MOODLE_INTERNAL') || die();
+
 
     $capabilities = array(
         'enrol/shebang:unenrol' => array('captype'      => 'write',

@@ -39,13 +39,13 @@
     require_capability('moodle/site:config', get_system_context());
 
 
-    $action             = optional_param('action', 'index', PARAM_ALPHA);
-    $tool_class_name    = enrol_shebang_plugin::PLUGIN_NAME . "_tools_{$action}";
+    $task               = optional_param('task', 'index', PARAM_ALPHA);
+    $tool_class_name    = enrol_shebang_plugin::PLUGIN_NAME . "_tools_{$task}";
 
-    if (!file_exists(dirname(__FILE__) . "/tools/tools_{$action}_class.php")) {
-        $action = 'index';
+    if (!file_exists(dirname(__FILE__) . "/tools/tools_{$task}_class.php")) {
+        $task = 'index';
     }
 
-    include(dirname(__FILE__) . "/tools/tools_{$action}_class.php");
+    include(dirname(__FILE__) . "/tools/tools_{$task}_class.php");
     $tool = new $tool_class_name();
     $tool->handle_request();

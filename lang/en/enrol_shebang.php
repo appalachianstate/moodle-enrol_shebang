@@ -1,7 +1,5 @@
 <?php
 
-    defined('MOODLE_INTERNAL') || die();
-
     /**
      * SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
      *
@@ -24,6 +22,9 @@
      * @package     enrol
      * @subpackage  shebang
      */
+
+    defined('MOODLE_INTERNAL') || die();
+
 
 /* CONFIG STRINGS */
 $string['pluginname']                       = 'SHEBanG';
@@ -140,17 +141,23 @@ $string['LBL_ENROLL_ROLE_NOMAP']            = 'Not Mapped';
 
 $string['LBL_TOOLS_INDEX']                  = 'SHEBanG Admin. Utilities';
 $string['LBL_TOOLS_IMPORT']                 = 'SHEBanG Import File';
-$string['LBL_TOOLS_IMPORT_FILE']            = 'Select file to import';
-$string['LBL_TOOLS_IMPORT_SUBMIT']          = 'Import';
+$string['LBL_TOOLS_IMPORT_SELECT']          = 'Select file to import';
+$string['LBL_TOOLS_IMPORT_UPLOAD']          = 'Upload or select a file';
+$string['LBL_TOOLS_IMPORT_SAVE']            = 'Save to SHEBanG files';
+$string['LBL_TOOLS_IMPORT_CANCEL']          = 'Cancel';
+$string['LBL_TOOLS_IMPORT_LINK_IMPORT']     = 'Import File';
+$string['LBL_TOOLS_IMPORT_LINK_DELETE']     = 'Delete File';
 $string['LBL_TOOLS_LINK']                   = 'Admin. Utilities: <a href="{$a}">Click Here</a>';
 $string['LBL_TOOLS_FILES']                  = 'SHEBanG Manage Files';
 
+$string['LBL_TOOLS_IMPORT_help']            = '<p>Import a previously uploaded file, or upload a new file.</p>';
+
 
 /* ERROR STRINGS */
-$string['ERR_MSG_NOHEADERS']                = 'No HTTP message headers found';
+$string['ERR_MSG_NOHEADERS']                = 'Required HTTP message headers not found';
 $string['ERR_XMLLIBS_NOTFOUND']             = 'Required XML libraries not present';
 $string['ERR_CONFIGS_NOTSET']               = 'Configuration settings not found';
-$string['ERR_DATADIR_IMPORT']               = 'Unable to create the import data directory';
+$string['ERR_DATADIR_CREATE']               = 'Unable to create the enrol_shebang data directory';
 $string['ERR_DATADIR_MESGLOG']              = 'Unable to create the message logging directory';
 $string['ERR_DATADIR_PROCLOG']              = 'Unable to create the process logging directory';
 $string['ERR_MESGLOG_NOOPEN']               = 'Unable to open the message logging file';
@@ -175,6 +182,8 @@ $string['ERR_CREATE_CROSSLIST_GROUP']       = 'Failed to create course group';
 $string['ERR_UPDATE_CROSSLIST_GROUP']       = 'Failed to update cross-list with course group id';
 $string['ERR_COURSECAT_ZERO']               = 'Could not determine category for new course';
 $string['ERR_ENROL_INSERT']                 = 'Could not create enrol instance in course';
+$string['ERR_CROSSLISTNOTENABLED']          = 'Cross-listing is not enabled';
+$string['ERR_METANOTENABLED']               = 'Cross-listing is not enabled';
 
 
 /* INFO STRINGS */

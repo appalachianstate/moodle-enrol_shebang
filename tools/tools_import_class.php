@@ -1,7 +1,5 @@
 <?php
 
-    defined('MOODLE_INTERNAL') || die();
-
     /**
      * SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
      *
@@ -25,6 +23,8 @@
      * @subpackage  shebang
      */
 
+    defined('MOODLE_INTERNAL') || die();
+
     require_once($CFG->libdir.'/formslib.php');
     require_once($CFG->libdir.'/uploadlib.php');
 
@@ -44,12 +44,12 @@
          */
         public $name    = 'Import File';
         /**
-         * Tool action
+         * Tool task
          *
          * @var string
          * @access public
          */
-        public $action  = 'import';
+        public $task  = 'import';
         /**
          * Tool description
          *
@@ -57,6 +57,13 @@
          * @access public
          */
         public $desc    = 'Upload and import an LMB/IMS XML file into the database.';
+        /**
+         * Valid actions
+         *
+         * @var array
+         * @access private
+         */
+        private $_valid_actions = array('import', 'delete');
 
 
 
@@ -65,23 +72,23 @@
          *
          * @access  public
          * @return  void
-         * @uses    $CFG, $SITE, $OUTPUT, $PAGE
+         * @uses    $CFG, $SITE, $OUTPUT, $PAGE, $USER, $_REQUEST
          */
         public function handle_request()
         {
-            global $CFG, $SITE, $OUTPUT, $PAGE;
+            global $CFG, $SITE, $OUTPUT, $PAGE, $USER, $_REQUEST;
 
 
 
-            $context = get_system_context();
+            $system_context = context_system::instance();
 
             $admin_url  = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . "/admin/settings.php", array('section' => 'enrolsettingsshebang'));
             $index_url  = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php');
-            $import_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php', array('action' => 'import'));
+            $import_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php', array('task' => 'import'));
 
-            $PAGE->set_context($context);
+            $PAGE->set_context($system_context);
             $PAGE->set_title($SITE->fullname . ':' . get_string('LBL_TOOLS_IMPORT', enrol_shebang_plugin::PLUGIN_NAME));
-            $PAGE->set_url($admin_url);
+            $PAGE->set_url($import_url);
             $PAGE->set_pagelayout('admin');
             $PAGE->set_heading($SITE->fullname);
 
@@ -90,74 +97,121 @@
 
             navigation_node::override_active_url($admin_url);
 
-            echo $OUTPUT->header();
 
             $data = new stdClass();
-            $data->returnurl = $index_url;
 
-            $options = array('subdirs'        => 0,
-                             'maxfiles'		  => 1,
-            				 'accepted_types' => '*.xml',
-                             'return_types'   => FILE_INTERNAL);
+            $file_manager_options = array(
+                'subdirs'        => 0,
+                'maxfiles'		 => -1,
+				'accepted_types' => '*.xml',
+                'return_types'   => FILE_INTERNAL);
 
-            file_prepare_standard_filemanager($data, 'files', $options, $context, enrol_shebang_plugin::PLUGIN_NAME, 'uploads', 0);
-            $mform = new enrol_shebang_tools_import_form($import_url, array('data' => $data, 'options' => $options));
+            // Fix up the form. Have not determined yet whether this is a
+            // GET or POST, but the form will be used in either case.
+            $mform = new enrol_shebang_tools_import_form($import_url, array('data' => $data, 'options' => $file_manager_options));
+            // Use the form methods to determine the request method
             if (!$mform->is_submitted()) {
-                $mform->display();
-            } elseif ($mform->is_cancelled()) {
-                redirect($index_url);
-            } elseif($formdata = $mform->get_data()) {
 
-                // File has already been uploaded by filemanager/filepicker and
-                // placed in user draft area with an itemid (previously unused),
-                // and with our maxfiles option of 1, we should only have only
-                // the single file in this logical directory, but we need to know
-                // the filename
+                echo $OUTPUT->header();
+                echo $OUTPUT->heading_with_help('SHEBanG File Import', 'LBL_TOOLS_IMPORT', enrol_shebang_plugin::PLUGIN_NAME);
 
-                // Get the draft area itemid from the form data
-                $draftarea_itemid = $formdata->files_filemanager;
+                // GET request, look for any query str params
+                $action = optional_param('action', null, PARAM_ALPHA);
+                $itemid = optional_param('itemid', null, PARAM_INT);
 
-                // Use that to get all the files (all one of them) in that
-                // logical directory
-                $draftarea_files = file_get_drafarea_files($draftarea_itemid, '/');
-
-                // The 'list' property of the returned object is an array of file
-                // info objects, each object having a filename property.
-                if (!$draftarea_files->list) {
-                    print_error('ERR_DATAFILE_NOFILE', enrol_shebang_plugin::PLUGIN_NAME, $index_url->out(true));
+                // Validate the action and itemid
+                if (   (!empty($action) && !in_array($action, $this->_valid_actions, true))
+                    || empty($itemid) || !is_number($itemid)) {
+                    $action = null;
                 }
-                $filename = $draftarea_files->list[0]->filename;
 
-                // Move the file from the draft area (newly uploaded) to an area
-                // specific to our plugin and change the itemid to 0
-                $formdata = file_postupdate_standard_filemanager($formdata, 'files', $options, $context, enrol_shebang_plugin::PLUGIN_NAME, 'uploads', 0);
+                if (null == $action) {
 
-                // Use a filestorage object to get the uploaded file
-                $fs = get_file_storage();
-                $file_instance = $fs->get_file($context->id, enrol_shebang_plugin::PLUGIN_NAME, 'uploads', 0, '/', $filename);
+                    // Display the form with a filepicker and a list
+                    // of files in this plugin's filearea
+                    echo $OUTPUT->container_start();
+                    $mform->display();
+                    echo $PAGE->get_renderer('enrol_shebang', 'tools')->enrol_shebang_tools_filelist();
+                    echo $OUTPUT->container_end();
 
-                // Because the actual filesystem location of the pool files is
-                // restricted, we have to go out of band (read cheat) to get the
-                // location.
-                $contenthash = $file_instance->get_contenthash();
-                $file_instance_path = (isset($CFG->filedir) ? $CFG->filedir : "{$CFG->dataroot}/filedir")
-                                    . "/{$contenthash[0]}{$contenthash[1]}/{$contenthash[2]}{$contenthash[3]}/$contenthash";
+                } else {
 
-                // Now do the import work and emit some feedback
-                echo $OUTPUT->heading(get_string('LBL_TOOLS_IMPORT', enrol_shebang_plugin::PLUGIN_NAME));
-                echo $OUTPUT->box_start();
-                ob_flush(); flush();
+                    switch ($action) {
 
-                $feedback = new progress_bar('shebang_pb', 500, true);
-                $plugin   = new enrol_shebang_plugin();
-              //$plugin->import_lmb_file($file_instance_path, $feedback);
+                        case 'import':
 
-                echo $OUTPUT->continue_button(new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . "/tools.php"));
-                echo $OUTPUT->box_end();
+                            $area_files  = get_file_storage()->get_area_files($system_context->id, enrol_shebang_plugin::PLUGIN_NAME, enrol_shebang_plugin::PLUGIN_FILEAREA, $itemid, null, false);
+                            if (null != ($stored_file = array_shift($area_files))) {
 
-            }
+                                // Now do the import work and emit some feedback
+                                echo $OUTPUT->box_start();
+                                ob_flush(); flush();
 
-            echo $OUTPUT->footer();
+                                $feedback = new progress_bar('shebang_pb', 500, true);
+                                $plugin   = new enrol_shebang_plugin();
+                                $plugin->import_lmb_file($stored_file, $feedback);
+
+                                echo $OUTPUT->continue_button($index_url);
+                                echo $OUTPUT->box_end();
+
+                                break;
+
+
+                            } else {
+
+                                // File not found
+                                echo $OUTPUT->box("File not found");
+                                echo $OUTPUT->continue_button($index_url);
+
+                            }
+
+                            break;
+
+                        case 'delete':
+
+                            // Delete the file
+                            get_file_storage()->delete_area_files($system_context->id, enrol_shebang_plugin::PLUGIN_NAME, enrol_shebang_plugin::PLUGIN_FILEAREA, $itemid);
+                            // Re-display the file list
+                            echo $OUTPUT->container_start();
+                            $mform->display();
+                            echo $PAGE->get_renderer('enrol_shebang', 'tools')->enrol_shebang_tools_filelist();
+                            echo $OUTPUT->container_end();
+
+                            break;
+
+                    } // switch ($action)
+
+                }
+
+                echo $OUTPUT->footer();
+
+            } elseif ($mform->is_cancelled()) {
+
+                // POST request, but cancel button clicked. Clear out draft
+                // file area to remove unused uploads, then send user back
+                // to tools index.
+                get_file_storage()->delete_area_files(context_user::instance($USER->id)->id, 'user', 'draft', file_get_submitted_draft_itemid('files_filemanager'));
+                redirect($index_url);
+
+             } elseif(null != ($formdata = $mform->get_data())) {
+
+                 // POST request, submit button clicked. Save any uploaded
+                 // files from the draft area into this module's filearea,
+                 // keeping the (draft) itemid -- do this to prevent file
+                 // from being stepped on from subsequent uploads.
+                 file_save_draft_area_files($formdata->files_filemanager, $system_context->id, enrol_shebang_plugin::PLUGIN_NAME, enrol_shebang_plugin::PLUGIN_FILEAREA, $formdata->files_filemanager);
+                 // File is in the module's upload filearea under the system
+                 // context, so tidy up the user's draft area using the same
+                 // itemid value
+                 get_file_storage()->delete_area_files(context_user::instance($USER->id)->id, 'user', 'draft', $formdata->files_filemanager);
+                 // At this point we should issue a redirect so the user-agent
+                 // will GET a new page for two reasons: so the last request
+                 // is not a POST in case the user clicks the browser refresh
+                 // button; and a new draft itemid will be generated so that
+                 // a subsequent upload doesn't overwrite the file just sent.
+                 redirect($import_url);
+
+             }
 
         } // handle_request
 
@@ -180,42 +234,15 @@
          */
         public function definition()
         {
-            $data    = $this->_customdata['data'];
-            $options = $this->_customdata['options'];
 
-            $this->_form->addElement('header', 'general', get_string('LBL_TOOLS_IMPORT', enrol_shebang_plugin::PLUGIN_NAME));
-            $this->_form->addElement('filepicker', 'files_filemanager', get_string('LBL_TOOLS_IMPORT_FILE', enrol_shebang_plugin::PLUGIN_NAME), null, $options);
-            $this->_form->addElement('hidden', 'returnurl', $data->returnurl);
+            $this->_form->addElement('header', 'general', get_string('LBL_TOOLS_IMPORT_UPLOAD', enrol_shebang_plugin::PLUGIN_NAME));
+            $this->_form->addElement('filepicker', 'files_filemanager', null, null, $this->_customdata['options']);
+            $this->add_action_buttons(true, get_string('LBL_TOOLS_IMPORT_SAVE', enrol_shebang_plugin::PLUGIN_NAME));
 
-            $this->add_action_buttons(true, get_string('LBL_TOOLS_IMPORT_SUBMIT', enrol_shebang_plugin::PLUGIN_NAME));
-            $this->set_data($data);
+            $this->set_data($this->_customdata['data']);
 
         } // definition
 
 
-
-        /**
-         * Validate the submitted form data (file upload)
-         *
-         * @access public
-         * @return array
-         * @uses $CFG
-         */
-        public function validation($data, $files)
-        {
-            global $CFG;
-
-
-
-            $errors = array();
-            $fileinfo = file_get_draft_area_info($data['files_filemanager']);
-            if ($fileinfo['filesize'] > $CFG->userquota) {
-                $errors['files_filemanager'] = get_string('userquotalimit', 'error');
-            }
-
-            return $errors;
-
-        } // validation
-
-
     } // class
+

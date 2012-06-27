@@ -1,7 +1,5 @@
 <?php
 
-    defined('MOODLE_INTERNAL') || die();
-
     /**
      * SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
      *
@@ -25,12 +23,15 @@
      * @subpackage  shebang
      */
 
+    defined('MOODLE_INTERNAL') || die();
+
     require     (dirname(__FILE__) . '/version.php');
     require_once(dirname(__FILE__) . '/lib.php');
     require_once("{$CFG->dirroot}/course/lib.php");
 
-    if (!defined('PLUGIN_NAME')) define('PLUGIN_NAME', 'enrol_'  . $enrol);
-    if (!defined('PLUGIN_PATH')) define('PLUGIN_PATH', '/enrol/' . $enrol);
+    define('PLUGIN_NAME', 'enrol_shebang');
+    define('PLUGIN_PATH', '/enrol/shebang');
+
 
     /**
      * Index (in order of appearance) of config values

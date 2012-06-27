@@ -29,7 +29,7 @@
 
  There already is an enrolment plugin, LMB, developed by Eric Merrill
  <merrill@oakland.edu> that processes Banner data, and has many more
- configuration options and features. We have been using this plugin
+ configuration options and features. We had used Eric's plugin
  for several years at Appalachian State with only a few basic alter-
  ations.
 
@@ -42,7 +42,7 @@
  log each of the XML messages received, but not in the database.
  
  Putting them in a text file is more practical for us. Messages sent
- by the LMB are logged to the file-system in the Moodle data directory
+ by the LMB are logged to a text file in the Moodle data directory
  rather than the database; this message log file is locked while the
  message is being processed in order to serialize message processing.
 
@@ -53,15 +53,15 @@
  it makes more sense to use DOMXPath queries to extract message data.
 
  XMLParser is used to break up the input, whether from file or posted
- XML, into the principle elements we want (<group>, <person>, and
+ XML, into the principal elements we want (<group>, <person>, and
  <membership>), and from that point use the DOMDocument and DOMXPath
  to query for the needed values.
 
  Some other differences:
    
- Messages imported from a file are not logged since there's already a
- source file;
- 
+ Messages imported from a file are not logged since the message source
+ file is available for reference.
+
  A cross-list course parent is created only when the first <membership>
  message for that cross-list arrives, and then it will be created by
  making a copy of the child course.
@@ -79,16 +79,20 @@
  INSTALLATION
  ------------
  Place the shebang directory in the site's enrol directory. Access the
- notifications page (Admin block->Notifications) to initiate database
- setup.
+ notifications (Settings block->Site administration->Notifications) to
+ initiate database setup.
  
- Enable and configure the plugin, using the admin menu:
-  Site Administration->Plugins->Enrolments->Manage enrol plugins
- 
+ First configure and then enable the plugin (Settings block->Site ad-
+ ministration->Plugins->Enrolments->Manage enrol plugins)
+
  Configure your Banner/LMB to POST messages to the URL corresponding
  to the enrol/shebang/secure/post.php file, for example:
  
+   Direct address...
    https://moodle.someuniversity.edu/enrol/shebang/secure/post.php
+   
+   Alias /banlmb /var/www/moodle/enrol/lmb/secure...
+   https://moodle.someuniversity.edu/banlmb/post.php
  
       * * * * * * * * *   I M P O R T A N T   * * * * * * * * *      
 
@@ -102,11 +106,10 @@
  TICATION SINCE EITHER THE USERID/PWD INFORMATION WILL BE EXPOSED
  WHEN SENT IN CLEAR-TEXT (BASIC) OR THE (DIGEST) HASH WILL BE EXPOSED.
  
- There is no Moodle authentication protection in the post.php since it
- is intended that only Banner LMB will be accessing this URL and a
- separate userid/password will be configured by the Moodle server admin
- and shared with the Luminis admins.
-
+ REMEMBER TO GENERALLY DENY ALL ACCESS TO THAT DIRECTORY FOR ALL THE
+ CONFIGURED HOSTS/VHOSTS, THEN ALLOW ACCESS ONLY ON THE HOSTS/PORTS
+ THAT REQUIRE IT.
+ 
 
  CONSIDERATIONS FOR BLOCKING ISSUES
  ----------------------------------
@@ -124,34 +127,37 @@
  
  HOW ENTITIES ARE ASSOICATED AND REFERENCED
  ------------------------------------------
+ 
  Courses:
+ 
  A staging record in the [mdl_enrol_shebang_section] table is inserted
  or updated, using the <sourcedid><id> value (the CRN) as the alternate
- key. This same value is placed in the [mdl_course](idnumber) column so
- that table can be queried directory. The course's (idnumber) value can
+ key. This same value is placed in the [mdl_course][idnumber] column so
+ that table can be queried directory. The course's [idnumber] value can
  not be changed after that or the association will be lost.
  
  Users:
+ 
  A staging record in the [mdl_enrol_shebang_person] table is inserted
  or updated, using the <sourcedid><id> value (the Luminis Id for that
- Banner identity, distinct from the Banner identity value). Susbsequent
+ Banner entity, distinct from the Banner identity value). Susbsequent
  <membership> messages for this person will use this <sourcedid><id> so
  we need to use this as an alternate identifying key value. A <person>
  message also contains the <userid useridtype="SCTID"> value, the
- Banner identity, and it's this value that is placed in the [mdl_user]
- (idnumber) column.
+ Banner identity, and it is this value that is placed in the [mdl_user]
+ [idnumber] column.
  
  So, upon arrival of a <person> message, and after the staging record
- is handled, the [mdl_user] table is queried on the (idnumber) column
+ is handled, the [mdl_user] table is queried on the [idnumber] column
  for the SCTID value--if no record is found, then an attempt is made to
  insert one, otherwise the found record is updated. Because other
  columns in the [mdl_user] table are unique (enforced either by the
- application or the database), a collision on email or username by 
+ application or the database), a collision on email or username will 
  prevent the insert. In such cases, manual inspection of the existing
  user account should be done to determine if it can be deleted (no 
  access, no enrolments, etc.) or if it should be associated with the
  corresponding [mdl_enrol_shebang_person] row by placing the appro-
- priate Banner identity value in the user's (idnumber) column.
+ priate Banner identity value in the user's [idnumber] column.
 
  Until any such collision is resolved, course enrollments for that
  person/user will fail since no association exists between the person

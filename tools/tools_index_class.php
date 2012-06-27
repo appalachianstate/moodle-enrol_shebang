@@ -1,7 +1,5 @@
 <?php
 
-    defined('MOODLE_INTERNAL') || die();
-
     /**
      * SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
      *
@@ -24,6 +22,8 @@
      * @package     enrol
      * @subpackage  shebang
      */
+
+    defined('MOODLE_INTERNAL') || die();
 
 
     /**
@@ -77,7 +77,7 @@
 
             $PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
             $PAGE->set_title($SITE->fullname . ':' . get_string('LBL_TOOLS_INDEX', enrol_shebang_plugin::PLUGIN_NAME));
-            $PAGE->set_url($admin_url);
+            $PAGE->set_url($index_url);
             $PAGE->set_pagelayout('admin');
             $PAGE->set_heading($SITE->fullname);
 
@@ -100,13 +100,13 @@
             foreach(glob(dirname(__FILE__) . '/tools_*_class.php') as $file_path) {
 
                 $name_parts = explode('_', basename($file_path, '.php'));
-                if (($action = $name_parts[1]) == 'index') continue;
+                if (($task = $name_parts[1]) == 'index') continue;
 
                 include_once($file_path);
 
-                $tool_class_name = enrol_shebang_plugin::PLUGIN_NAME . "_tools_{$action}";
+                $tool_class_name = enrol_shebang_plugin::PLUGIN_NAME . "_tools_{$task}";
                 $tool = new $tool_class_name();
-                $tool_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . "/tools.php", array('action' => $tool->action));
+                $tool_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . "/tools.php", array('task' => $tool->task));
                 $table->data[] = array("<a href=\"" . $tool_url->out() . "\">{$tool->name}</a>", $tool->desc);
 
             }

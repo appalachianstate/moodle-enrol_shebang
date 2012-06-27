@@ -1,7 +1,5 @@
 <?php
 
-    defined('MOODLE_INTERNAL') || die();
-
     /**
      * SHEBanG enrolment plugin/module for SunGard HE Banner(r) data import
      *
@@ -25,6 +23,9 @@
      * @subpackage  shebang
      */
 
+    defined('MOODLE_INTERNAL') || die();
+
+
     /**
      * Version info for shebang enrol module/plugin. Included
      * from the lib/adminlib.php:upgrade_plugins function
@@ -33,7 +34,7 @@
 
     $plugin             = new stdClass();
 
-    $plugin->version    = 2011031701;
-    $plugin->requires   = 2010000000;
-    $plugin->release    = "0.0.2";
+    $plugin->version    = 2012062500;
+    $plugin->requires   = 2011033000;
+    $plugin->release    = "0.0.3";
     $plugin->cron       = 1;
