@@ -460,7 +460,7 @@
                 // Nothing found, so fix up a new set with some safe defaults
                 $this->config = new stdClass();
 
-                foreach($this->configDefaults as $name => $config_info) {
+                foreach(self::$configDefaults as $name => $config_info) {
                     $this->config->$name = $config_info['default'];
                 }
 
@@ -481,7 +481,7 @@
         public function set_config($name, $value)
         {
 
-            if (!array_key_exists($name, $this->configDefaults))
+            if (!array_key_exists($name, self::$configDefaults))
                 return;
 
             $this->load_config();
@@ -490,18 +490,18 @@
             if ($value === null) {
 
                 // Reset to default value
-                $value = $this->configDefaults[$name]['default'];
+                $value = self::$configDefaults[$name]['default'];
 
-            } elseif ($this->configDefaults[$name]['type'] == 'checkbox') {
+            } elseif (self::$configDefaults[$name]['type'] == 'checkbox') {
 
                 // Either a 1 or 0 allowed
                 if ($value != "1" && $value != "0") {
-                    $value = $this->configDefaults[$name]['default'];
+                    $value = self::$configDefaults[$name]['default'];
                 }
 
-            } elseif ($this->configDefaults[$name]['type'] == 'number' && !is_number($value)) {
+            } elseif (self::$configDefaults[$name]['type'] == 'number' && !is_number($value)) {
 
-                $value = $this->configDefaults[$name]['default'];
+                $value = self::$configDefaults[$name]['default'];
 
             } else {
 
@@ -516,7 +516,7 @@
                 case 'monitor_stop_hour' :
                     $value = (int)$value;
                     if ($value < 0 || $value > 23) {
-                        $value = $this->configDefaults[$name]['default'];
+                        $value = self::$configDefaults[$name]['default'];
                     }
                     break;
 
@@ -524,20 +524,20 @@
             	case 'monitor_stop_min'  :
             	    $value = (int)$value;
             	    if ($value < 0 || $value > 59) {
-            	        $value = $this->configDefaults[$name]['default'];
+            	        $value = self::$configDefaults[$name]['default'];
             	    }
             	    break;
 
             	case 'monitor_threshold' :
             	    $value = (int)$value;
             	    if ($value < self::MIN_MONITOR_THRESHOLD || $value > self::MAX_MONITOR_THRESHOLD) {
-            	        $value = $this->configDefaults[$name]['default'];
+            	        $value = self::$configDefaults[$name]['default'];
             	    }
                     break;
             	case 'course_parent_striplead' :
             	    $value = (int)$value;
             	    if ($value < 0 || $value > self::MAX_COURSE_PARENT_STRIPLEAD) {
-            	        $value = $this->configDefaults[$name]['default'];
+            	        $value = self::$configDefaults[$name]['default'];
             	    }
             	    break;
             }
