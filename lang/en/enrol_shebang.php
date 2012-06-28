@@ -192,6 +192,7 @@ $string['INF_USERCREATE_NOACTION']          = 'No action taken for create user';
 
 
 $string['INF_TOOLS_IMPORT_PROGRESS']        = '<smaller>{$a->blocks_read} of {$a->blocks_total} blocks read</smaller>';
+$string['INF_TOOLS_IMPORT_FILENOTFOUND']    = 'File specified was not found';
 
 
 $string['INF_CRON_START']                   = 'SHEBanG cron: Beginning cron task.';

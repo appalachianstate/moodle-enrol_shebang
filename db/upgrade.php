@@ -31,10 +31,11 @@
      *
      * @param   int         $oldversion     The currently recorded version for this mod/plugin
      * @return  boolean
+     * @uses $DB
      */
     function xmldb_enrol_shebang_upgrade($oldversion=0) {
 
-        global $db;
+        global $DB;
 
 
 

@@ -160,7 +160,7 @@
                             } else {
 
                                 // File not found
-                                echo $OUTPUT->box("File not found");
+                                echo $OUTPUT->box(get_string(INF_TOOLS_IMPORT_FILENOTFOUND, enrol_shebang_plugin::PLUGIN_NAME));
                                 echo $OUTPUT->continue_button($index_url);
 
                             }
