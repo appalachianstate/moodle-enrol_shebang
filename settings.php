@@ -70,6 +70,7 @@
      * person_locality
      * person_locality_default
      * person_country
+     * person_idnumber_sctid
      *
      * course_category
      * course_category_id
@@ -233,6 +234,7 @@
 
         $settings->add(new admin_setting_configselect(PLUGIN_NAME   . '/person_country', get_string('LBL_PERSON_COUNTRY', PLUGIN_NAME), '', enrol_shebang_plugin::DEF_PERSON_COUNTRY, get_string_manager()->get_list_of_countries()));
 
+        $settings->add(new admin_setting_configcheckbox(PLUGIN_NAME . '/person_idnumber_sctid',   get_string('LBL_PERSON_IDNUMBER_SCTID',   PLUGIN_NAME), '', '0'));
 
         /*
          * Course-section (group) messages

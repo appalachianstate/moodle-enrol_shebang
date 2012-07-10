@@ -96,6 +96,7 @@ $string['LBL_PERSON_LOCALITY_DEF']          = 'Default configured value';
 $string['LBL_PERSON_LOCALITY_IFF']          = 'Locality if present, else Default';
 $string['LBL_PERSON_LOCALITY_DEFAULT']      = 'Default locality/city';
 $string['LBL_PERSON_COUNTRY']               = 'Country for new users';
+$string['LBL_PERSON_IDNUMBER_SCTID']        = 'Use SCTID for idnumber';
 
 
 $string['LBL_COURSE']                       = 'Course (Section) Messages';
@@ -189,6 +190,7 @@ $string['ERR_METANOTENABLED']               = 'Cross-listing is not enabled';
 /* INFO STRINGS */
 $string['INF_USERDELETE_NOACTION']          = 'No action taken for delete user recstatus';
 $string['INF_USERCREATE_NOACTION']          = 'No action taken for create user';
+$string['INF_COURSEDELETE_NOACTION']        = 'No action taken for course delete';
 
 
 $string['INF_TOOLS_IMPORT_PROGRESS']        = '<smaller>{$a->blocks_read} of {$a->blocks_total} blocks read</smaller>';

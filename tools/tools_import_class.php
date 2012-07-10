@@ -151,8 +151,8 @@
                                 $plugin   = new enrol_shebang_plugin();
                                 $plugin->import_lmb_file($stored_file, $feedback);
 
-                                echo $OUTPUT->continue_button($index_url);
                                 echo $OUTPUT->box_end();
+                                echo $OUTPUT->continue_button($index_url);
 
                                 break;
 

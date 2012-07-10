@@ -330,6 +330,7 @@
             'person_locality'	             => array('type' => 'text',     'default' => self::OPT_PERSON_LOCALITY_IFF),
             'person_locality_default'		 => array('type' => 'text',     'default' => ''),
             'person_country'                 => array('type' => 'text',     'default' => self::DEF_PERSON_COUNTRY),
+            'person_idnumber_sctid'          => array('type' => 'checkbox', 'default' => 0),
 
             'course_category'    	         => array('type' => 'text',     'default' => self::OPT_COURSE_CATEGORY_TERM),
             'course_category_id'             => array('type' => 'number',   'default' => 0),
@@ -395,14 +396,14 @@
             $this->load_config();
 
             // Set up some helpers
-            $this->pluginDir        = "{$CFG->dirroot}" . self::PLUGIN_PATH . "/";
-            $this->pluginUrl        = "{$CFG->wwwroot}" . self::PLUGIN_PATH . "/";
+            $this->pluginDir        = $this->moodleConfigs->dirroot . self::PLUGIN_PATH . "/";
+            $this->pluginUrl        = $this->moodleConfigs->wwwroot . self::PLUGIN_PATH . "/";
 
             $log_date_suffix        = date(self::DATEFMT_LOG_FILEX);
-            $this->messageLogPath   = "{$CFG->dataroot}/" . self::PLUGIN_NAME . "/"
+            $this->messageLogPath   = $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME . "/"
                                     . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
 
-            $this->processLogPath   = "{$CFG->dataroot}/" . self::PLUGIN_NAME . "/"
+            $this->processLogPath   = $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME . "/"
                                     . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
 
 
@@ -415,16 +416,16 @@
 
             // Need to know some global configs in case of new Moodle recs
             // being inserted
-            if (!isset($CFG->mnet_localhost_id)) {
-                include_once("{$CFG->dirroot}/mnet/lib.php");
+            if (!isset($this->moodleConfigs->mnet_localhost_id)) {
+                include_once("{$this->moodleConfigs->dirroot}/mnet/lib.php");
                 $env = new mnet_environment();
                 $env->init(); unset($env);
             }
 
 
             // Verify certain dirs are in place
-            if (   !is_dir("{$CFG->dataroot}/" . self::PLUGIN_NAME)
-                && !mkdir("{$CFG->dataroot}/" . self::PLUGIN_NAME, self::MKDIR_MODE, true)) {
+            if (   !is_dir("{$this->moodleConfigs->dataroot}/" . self::PLUGIN_NAME)
+                && !mkdir("{$this->moodleConfigs->dataroot}/" . self::PLUGIN_NAME, self::MKDIR_MODE, true)) {
                 error_log(get_string('ERR_DATADIR_CREATE', self::PLUGIN_NAME));
                 die;
             }
@@ -641,9 +642,10 @@
          * @param   string      $msg_id     LMB message id from HTTP headers
          * @param   string      $data       XML that was *POST*ed by LMB
          * @param   boolean     $keep_lock  Whether or not to keep file lock
+         * @param   boolean     $result     Success or failure
          * @return  void
          */
-        private function log_lmb_message($msg_id, $data, $keep_lock = false)
+        private function log_lmb_message($msg_id, $data, $keep_lock = false, $result = null)
         {
 
             /* We run the risk of bogging down the message processing, but
@@ -655,6 +657,7 @@
              */
 
             if (isset($this->config->logging_nologlock) && !empty($this->config->logging_nologlock)) {
+                // Defeat the locking if told to do so
                 $keep_lock = false;
             }
 
@@ -663,7 +666,17 @@
             }
 
             $log_time = date(self::DATEFMT_LOG_ENTRY);
-            fwrite($this->messageLogRes, "{$log_time}#{$msg_id}#{$data}\n");
+            $log_mesg = "#{$log_time}#{$msg_id}";
+            if ($result !== null) {
+                $log_mesg .= "#" . ($result ? 'success' : 'failure');
+            }
+            $log_mesg .= "\n";
+            fwrite($this->messageLogRes, $log_mesg);
+
+            if ($this->config->logging_logxml && $data !== null) {
+                fwrite($this->messageLogRes, $data);
+                fwrite($this->messageLogRes, "\n");
+            }
 
             // If unlock fails (can it?) we got big problems,
             // so handle that here and die quickly
@@ -770,8 +783,9 @@
             }
 
             set_time_limit(0);
-            $progress_counter->block_size = self::INFILE_BLOCK_SIZE;
+            $progress_counter->block_size   = self::INFILE_BLOCK_SIZE;
             $progress_counter->blocks_total = ceil($stored_file->get_filesize() / self::INFILE_BLOCK_SIZE);
+            $progress_counter->blocks_read  = 0;
 
             try
             {
@@ -794,7 +808,6 @@
                 xml_set_element_handler($xml_parser, array($this, 'parser_start_element'), array($this, 'parser_end_element'));
                 xml_set_character_data_handler($xml_parser, array($this, 'parser_character_data'));
 
-                $progress_counter->blocks_read = 0;
                 while (true == ($data = fread($fh, self::INFILE_BLOCK_SIZE))) {
 
                     $progress_counter->blocks_read++;
@@ -856,10 +869,13 @@
                 return false;
             }
 
+            // Reset this value from any previously received msg
+            $this->importFileDatetime = '';
+
             $xml_parser = null;
             try
             {
-                $this->log_lmb_message($msg_id, $this->config->logging_logxml ? "\n" . $data : '', true);
+                $this->log_lmb_message($msg_id, $data, true, null);
 
                 if (!($xml_parser = xml_parser_create())) {
                     throw new Exception(get_string('ERR_XMLPARSER_CREATE', self::PLUGIN_NAME));
@@ -876,7 +892,7 @@
                     throw new Exception(sprintf("XML error: %s at line %d", xml_error_string(xml_get_error_code($xml_parser)), xml_get_current_line_number($xml_parser)));
                 }
 
-                $this->log_lmb_message($msg_id, $this->lastRetCode ? 'success' : 'failure', false);
+                $this->log_lmb_message($msg_id, null, false, $this->lastRetCode);
                 xml_parser_free($xml_parser);
 
                 return true;
@@ -1110,7 +1126,6 @@
          */
         private function import_group_term(DOMDocument $doc)
         {
-            global $DB;
 
             /* Moodle does not use the concept of an academic term, but
              * still can use it so admins can map course sections for a
@@ -1184,9 +1199,14 @@
             $lmb_data->dept_name         = $xpath->evaluate("string(/GROUP/ORG/ORGUNIT)");
             $lmb_data->begin_date        = $xpath->evaluate("string(/GROUP/TIMEFRAME/BEGIN)");
             $lmb_data->end_date          = $xpath->evaluate("string(/GROUP/TIMEFRAME/END)");
+            $lmb_data->recstatus         = $xpath->evaluate("string(/GROUP/@RECSTATUS)");
             $lmb_data->insert_date       =
             $lmb_data->update_date       = date(self::DATEFMT_SQL_VALUE);
 
+
+
+            // If recstatus not present, default is add (1)
+            if (!isset($lmb_data->recstatus) || empty($lmb_data->recstatus)) $lmb_data->recstatus = self::RECSTATUS_ADD;
 
 
             if ($this->config->course_parent_striplead) {
@@ -1212,21 +1232,41 @@
             }
             $this->log_process_message(self::SHEBANGENT_SECTION, $lmb_data->source_id, $op, $rc);
 
-
             // Bailout here if no joy
             if (false === $rc) {
                 return false;
             }
 
+            // See if there is a Moodle course rec
+            $course_rec = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $lmb_data->source_id));
+            if ($lmb_data->recstatus == self::RECSTATUS_DELETE) {
 
-            // Try to fetch the Moodle course rec
-            if (false === ($course_rec = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $lmb_data->source_id)))) {
-                $rc = $this->insert_course($lmb_data);
-                $this->log_process_message(self::MOODLENT_COURSE, $lmb_data->source_id, 'insert', $rc);
+                if (false === $course_rec) {
+                    // Delete a course that is not there, no-op
+                    $this->log_process_message(self::MOODLENT_COURSE, $lmb_data->source_id, 'delete', get_string('INF_COURSEDELETE_NOACTION', self::PLUGIN_NAME));
+
+                } else {
+                    // Will not delete a course, but will make
+                    // it unavailable and remove association
+                    $course_rec->visible    =
+                    $course_rec->visibleold = 0;
+                    $course_rec->idnumber   = '';
+                    try { $this->moodleDB->update_record(self::MOODLENT_COURSE, $course_rec); }
+                    catch (Exception $exc) { $this->log_process_exception($exc); $rc = false; }
+                }
+
             } else {
-                $rc = $this->update_course($lmb_data, $course_rec);
-                $this->log_process_message(self::MOODLENT_COURSE, $course_rec->id, 'update', $rc);
-            }
+
+                // Add or update the course
+                if (false === $course_rec) {
+                    $rc = $this->insert_course($lmb_data);
+                    $this->log_process_message(self::MOODLENT_COURSE, $lmb_data->source_id, 'insert', $rc);
+                } else {
+                    $rc = $this->update_course($lmb_data, $course_rec);
+                    $this->log_process_message(self::MOODLENT_COURSE, $course_rec->id, 'update', $rc);
+                }
+
+            } // else recstatus == RECSTATUS_ADD | RECSTATUS_UPDATE
 
             return $rc;
 
@@ -1300,14 +1340,15 @@
             $new_course_data->idnumber    = $lmb_data->source_id;
             $new_course_data->summary     = $lmb_data->desc_full;
 
-            $new_course_data->startdate   = strtotime($lmb_data->begin_date);
+            $new_course_data->startdate   = empty($lmb_data->begin_date) ? 0 : strtotime($lmb_data->begin_date);
             $new_course_data->visible     =
             $new_course_data->visibleold  = $this->config->course_hidden ? 0 : 1;
 
             // Adjust numsections to fit the number of weeks if
-            // that's the preference
-            if ($this->config->course_sections_equal_weeks) {
-                $new_course_data->numsections = ceil(abs($new_course_data->enrolenddate - $new_course_data->enrolstartdate) / WEEKSECS);
+            // that's the preference. Get the start/end dates from
+            // the LMB data
+            if ($this->config->course_sections_equal_weeks && !empty($lmb_data->end_date) && !empty($new_course_data->startdate)) {
+                $new_course_data->numsections = ceil(abs(strtotime($lmb_data->end_date) - $new_course_data->startdate) / WEEKSECS);
             }
 
             // Insert the course, leave if that fails
@@ -1318,23 +1359,23 @@
                 // fix_course_sortorder(), mark_context_dirty(), etc.,
                 // but will also create the default (0) section row
                 $course = create_course($new_course_data);
+
+                // Set up an enrol plugin for this course. In the call to create_course()
+                // an attempt was made to create an enrol instance for the course, but
+                // because the config 'defaultenrol' is not set, it does nothing. It must
+                // be done here, passing the enrol start/end date values in an array
+                $enrol_properties = array(
+                        'enrolstartdate' => empty($lmb_data->begin_date) ? 0 : strtotime($lmb_data->begin_date),
+                        'enrolenddate'   => empty($lmb_data->end_date)   ? 0 : strtotime($lmb_data->end_date)
+                );
+                if (null == $this->add_instance($course, $enrol_properties)) {
+                    $this->log_process_message(self::MOODLENT_ENROL, $course->id, 'insert', get_string('ERR_ENROL_INSERT', PLUGIN_NAME));
+                    return false;
+                }
             }
             catch (Exception $exc)
             {
                 $this->log_process_exception($exc);
-                return false;
-            }
-
-            // Set up an enrol plugin for this course. In the call to create_course()
-            // an attempt was made to create an enrol instance for the course, but
-            // because the config 'defaultenrol' is not set, it does nothing. It must
-            // be done here, passing the enrol start/end date values in an array
-            $enrol_properties = array(
-                'enrolstartdate' => strtotime($lmb_data->begin_date),
-                'enrolenddate'   => strtotime($lmb_data->end_date)
-            );
-            if (null == $this->add_instance($course, $enrol_properties)) {
-                $this->log_process_message(self::MOODLENT_ENROL, $course->id, 'insert', get_string('ERR_ENROL_INSERT', PLUGIN_NAME));
                 return false;
             }
 
@@ -1389,6 +1430,21 @@
                 // Going to do simple row update rather than call the update_course()
                 // method, since not changing category, sort order, etc.
                 $this->moodleDB->update_record(self::MOODLENT_COURSE, $course_rec);
+                // Might need to adjust the enrol start/end date values in the
+                // course enrol instance.
+                $enrol_properties = array(
+                        'enrolstartdate' => strtotime($lmb_data->begin_date),
+                        'enrolenddate'   => strtotime($lmb_data->end_date)
+                );
+                if (null == ($instance_rec = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $course_rec->id, 'enrol' => $this->get_name())))) {
+                    $this->add_instance($course_rec, $enrol_properties);
+                } else {
+                    $instance_rec->enrolstartdate = $enrol_properties['enrolstartdate'];
+                    $instance_rec->enrolenddate   = $enrol_properties['enrolenddate'];
+                    $this->moodleDB->update_record(self::MOODLENT_ENROL, $instance_rec);
+                }
+
+                events_trigger('course_updated', $course_rec);
             }
             catch (Exception $exc)
             {
@@ -1396,21 +1452,6 @@
                 return false;
             }
 
-            // Might need to adjust the enrol start/end date values in the
-            // course enrol instance.
-            $enrol_properties = array(
-                    'enrolstartdate' => strtotime($lmb_data->begin_date),
-                    'enrolenddate'   => strtotime($lmb_data->end_date)
-            );
-            if (null == ($instance_rec = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $course_rec->id, 'enrol' => $this->get_name())))) {
-                $this->add_instance($course_rec, $enrol_properties);
-            } else {
-                $instance_rec->enrolstartdate = $enrol_properties['enrolstartdate'];
-                $instance_rec->enrolenddate   = $enrol_properties['enrolenddate'];
-                $this->moodleDB->update_record(self::MOODLENT_ENROL, $instance_rec);
-            }
-
-            events_trigger('course_updated', $course_rec);
             return true;
 
         } // update_course
@@ -1428,6 +1469,7 @@
         {
 
             $rc          = false;
+
             $xpath       = new DOMXPath($doc);
             $lmb_data    = new stdClass();
 
@@ -1460,12 +1502,17 @@
             {
                 if (false === ($old_rec = $this->moodleDB->get_record(self::SHEBANGENT_PERSON, array('source_id' => $lmb_data->source_id)))) {
                     $op = 'insert';
-                    $rc = $this->moodleDB->insert_record(self::SHEBANGENT_PERSON, $lmb_data, false);
+                    $lmb_data->id = $this->moodleDB->insert_record(self::SHEBANGENT_PERSON, $lmb_data, true);
                 } else {
-                    $lmb_data->id = $old_rec->id; unset($lmb_data->insert_date);
+                    // Need to preserve these values: id, obviously, and the userid_moodle value
+                    // which holds the user record association (mdl_user id)
+                    $lmb_data->id = $old_rec->id; $lmb_data->userid_moodle = $old_rec->userid_moodle;
+                    // Don't step on this value either
+                    unset($lmb_data->insert_date);
                     $op = 'update';
-                    $rc = $this->moodleDB->update_record(self::SHEBANGENT_PERSON, $lmb_data);
+                    $this->moodleDB->update_record(self::SHEBANGENT_PERSON, $lmb_data);
                 }
+                $rc = true;
             }
             catch (Exception $exc)
             {
@@ -1475,7 +1522,6 @@
 
             $this->log_process_message(self::SHEBANGENT_PERSON, $lmb_data->source_id, $op, $rc);
 
-
             // Bailout here if no joy
             if (false === $rc) {
                 return false;
@@ -1484,40 +1530,8 @@
 
             // If the recstatus on the message indicates to delete this user.
             if ($lmb_data->recstatus == self::RECSTATUS_DELETE) {
-
-                if (false === ($user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('idnumber' => $lmb_data->userid_sctid)))) {
-                    // Asked to delete a user who isn't there
-                    $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'delete', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
-                    return true;
-                }
-
-                $op = $this->config->person_delete;
-                switch($op)
-                {
-                    case self::OPT_PERSON_DELETE_DELETE:
-                        // Let Moodle delete the user--this
-                        // is removes the user from the DB
-                        $rc = delete_user($user_rec);
-                        break;
-                    case self::OPT_PERSON_DELETE_UNENROL:
-                        // Call the parent class' user_delete()
-                        // method, which will only find all of
-                        // the user's enrolments done with this
-                        // plugin, and remove them using a call
-                        // to unenrol_user().
-                        $this->user_delete($user_rec);
-                        $rc = true;
-                        break;
-                    default:
-                        // Ignore the message
-                        $rc = get_string('INF_USERDELETE_NOACTION', self::PLUGIN_NAME);
-                }
-
-                $this->log_process_message(self::MOODLENT_USER, $user_rec->id, $op, $rc);
-                return (boolean)$rc;
-
-            } // $lmb_data->recstatus == self::RECSTATUS_DELETE
-
+                return $this->delete_user($lmb_data);
+            }
 
             // The lmb message was for other than delete so we
             // need to to either update or insert this person
@@ -1552,118 +1566,194 @@
 
             $username = strtolower($username);
 
+            // If there is already a user association to our (existing) person
+            // staging rec, then use it if it is good. However, if there is not
+            // an association (new person staging rec, missing or bad user id
+            // value in existing rec), then try to make an association using the
+            // mnethostid (site config) and username derived from the message.
+
+            $user_rec = false;
             // Try to fetch the user rec
-            if (false === ($user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('idnumber' => $lmb_data->userid_sctid)))) {
-
-                // User isn't there, but check if we care
-                if (!$this->config->person_create) {
-                    $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, '', get_string('INF_USERCREATE_NOACTION', self::PLUGIN_NAME));
-                    return true;
+            if (isset($lmb_data->userid_moodle) && !empty($lmb_data->userid_moodle)) {
+                if (false === ($user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('id' => $lmb_data->userid_moodle)))) {
+                    // The currently associated user id is no longer valid and
+                    // should be discarded
+                    $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_moodle, 'select', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
+                    unset($lmb_data->userid_moodle);
                 }
+            }
 
-                // Create a new Moodle user rec
-                $user_rec               = new stdClass();
-                $user_rec->username     = $username;
-                $user_rec->auth         = $this->config->person_auth_method;
-                $user_rec->confirmed    = 1;
-                $user_rec->lang         = $this->moodleConfigs->lang;
-                $user_rec->lastip       = '0.0.0.0';
-                $user_rec->mnethostid   = $this->moodleConfigs->mnet_localhost_id;
-                $user_rec->timezone     = $this->moodleConfigs->timezone;
-                $user_rec->country      = $this->config->person_country;
+            // If no row found (or no attempt to find one) try to make
+            // an association with an existing user based on mnethostid
+            // and username
+            if (false === $user_rec) {
+                $user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('mnethostid' => $this->moodleConfigs->mnet_localhost_id, 'username' => $username));
+            }
 
-                // Get the auth plugin to be used for new users
-                if (is_enabled_auth($this->config->person_auth_method)) {
-                    $auth_plugin = get_auth_plugin($this->config->person_auth_method);
-                } else {
-                    $auth_plugin = get_auth_plugin(self::OPT_AUTH_NOLOGIN);
-                }
-
-                // If the auth plugin prevents local passwords, then indicate with
-                // a plain text value in the password field, otherwise fix up a hash
-                // of the specified default password in the message. One exception:
-                // the 'nologin' auth plugin indicates local passwords can be used
-                // because it does not want to step on any existing password hases,
-                // but this is a new user so we'll use the plain text for 'nologin'
-                if ($auth_plugin->prevent_local_passwords() || $auth_plugin->authtype == self::OPT_AUTH_NOLOGIN) {
-
-                    $user_rec->password = 'not cached';
-
-                } else {
-
-                    switch($this->config->person_password)
-                    {
-                        case self::OPT_PERSON_PASSWORD_USERID_LOGON:
-                            $user_rec->password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"Logon ID\"]/@PASSWORD)");
-                            break;
-                        case self::OPT_PERSON_PASSWORD_USERID_SCTID:
-                            $user_rec->password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"SCTID\"]/@PASSWORD)");
-                            break;
-                        default:
-                            $user_rec->password = random_string();
+            try
+            {
+                // If still no user rec then need to add one if configs allow
+                if (false === $user_rec) {
+                    if ($this->config->person_create) {
+                        $user_rec = $this->insert_user($lmb_data, $username, $xpath);
+                    } else {
+                        $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, '', get_string('INF_USERCREATE_NOACTION', self::PLUGIN_NAME));
+                        return true;
                     }
-                    $user_rec->password = hash_internal_user_password($user_rec->password);
-
+                } else {
+                    // Found a user rec so update it with message info
+                    $this->update_user($user_rec, $lmb_data, $xpath);
                 }
 
-                // We use the SCT/Banner Id for the user idnumber field because it
-                // has more relevance for the end-user than the Luminis sourcedid
-                $user_rec->idnumber     = $lmb_data->userid_sctid;
-
-                $user_rec->firstname    = $lmb_data->given_name;
-                $user_rec->lastname     = $lmb_data->family_name;
-                $user_rec->email        = $lmb_data->email;
-
-                if ($this->config->person_telephone) {
-                    $user_rec->phone1 = $lmb_data->telephone;
+                // If the user association hasn't been recorded yet then do it
+                if ($user_rec && (!isset($lmb_data->userid_moodle) || empty($lmb_data->userid_moodle))) {
+                    $lmb_data->userid_moodle = $user_rec->id;
+                    $this->moodleDB->update_record(self::SHEBANGENT_PERSON, $lmb_data);
                 }
+            }
+            catch (Exception $exc)
+            {
+                $this->log_process_exception($exc);
+                return false;
+            }
 
-                if ($this->config->person_address) {
-                    $user_rec->address = substr($lmb_data->street, 0, self::MAX_LEN_PERSON_STREET);
-                    switch($this->config->person_locality)
-                    {
-                        case self::OPT_PERSON_LOCALITY_DEF:
-                            $user_rec->city = $this->config->person_locality_default;
-                            break;
-                        case self::OPT_PERSON_LOCALITY_MSG:
+            return true;
+
+        } // import_person_element
+
+
+
+        /**
+         * Insert a new Moodle user record with the LMB information
+         *
+         * @access      private
+         * @param       stdClass        $lmb_data   The LMB staging record (message received)
+         * @param       string          $username   The username derived from the LMB message
+         * @param       DOMXPath        $xpath      The DOM Xpath with the XML message loaded
+         * @return      mixed                       New user record, or false
+         */
+        private function insert_user(stdClass $lmb_data, $username, DOMXPath $xpath)
+        {
+
+            // Create a new Moodle user rec
+            $user_rec               = new stdClass();
+            $user_rec->username     = $username;
+            $user_rec->confirmed    = 1;
+            $user_rec->lang         = $this->moodleConfigs->lang;
+            $user_rec->lastip       = '0.0.0.0';
+            $user_rec->mnethostid   = $this->moodleConfigs->mnet_localhost_id;
+            $user_rec->timezone     = $this->moodleConfigs->timezone;
+            $user_rec->country      = $this->config->person_country;
+
+            // Get the auth plugin to be used for new users
+            if (is_enabled_auth($this->config->person_auth_method)) {
+                $auth_plugin = get_auth_plugin($this->config->person_auth_method);
+            } else {
+                $auth_plugin = get_auth_plugin(self::OPT_AUTH_NOLOGIN);
+            }
+            $user_rec->auth = $auth_plugin->authtype;
+
+            // If the auth plugin prevents local passwords, then indicate with
+            // a plain text value in the password field, otherwise fix up a hash
+            // of the specified default password in the message. One exception:
+            // the 'nologin' auth plugin indicates local passwords can be used
+            // because it does not want to step on any existing password hases,
+            // but this is a new user so we'll use the plain text for 'nologin'
+            if ($auth_plugin->prevent_local_passwords() || $auth_plugin->authtype == self::OPT_AUTH_NOLOGIN) {
+
+                $user_rec->password = 'not cached';
+
+            } else {
+
+                switch($this->config->person_password)
+                {
+                    case self::OPT_PERSON_PASSWORD_USERID_LOGON:
+                        $user_rec->password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"Logon ID\"]/@PASSWORD)");
+                        break;
+                    case self::OPT_PERSON_PASSWORD_USERID_SCTID:
+                        $user_rec->password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"SCTID\"]/@PASSWORD)");
+                        break;
+                    default:
+                        $user_rec->password = random_string();
+                }
+                $user_rec->password = hash_internal_user_password($user_rec->password);
+
+            }
+
+            if ($this->config->person_idnumber_sctid) {
+                $user_rec->idnumber = $lmb_data->userid_sctid;
+            } else {
+                $user_rec->idnumber = $lmb_data->source_id;
+            }
+
+            $user_rec->firstname = $lmb_data->given_name;
+            $user_rec->lastname  = $lmb_data->family_name;
+            $user_rec->email     = $lmb_data->email;
+
+            if ($this->config->person_telephone) {
+                $user_rec->phone1 = $lmb_data->telephone;
+            }
+
+            if ($this->config->person_address) {
+                $user_rec->address = substr($lmb_data->street, 0, self::MAX_LEN_PERSON_STREET);
+                switch($this->config->person_locality)
+                {
+                    case self::OPT_PERSON_LOCALITY_DEF:
+                        $user_rec->city = $this->config->person_locality_default;
+                        break;
+                    case self::OPT_PERSON_LOCALITY_MSG:
+                        $user_rec->city = $lmb_data->locality;
+                        break;
+                    default:
+                        if ($lmb_data->locality) {
                             $user_rec->city = $lmb_data->locality;
-                            break;
-                        default:
-                            if ($lmb_data->locality) {
-                                $user_rec->city = $lmb_data->locality;
-                            } else {
-                                $user_rec->city = $this->config->person_locality_default;
-                            }
-                    }
+                        } else {
+                            $user_rec->city = $this->config->person_locality_default;
+                        }
                 }
+            }
 
-                $user_rec->description  = $lmb_data->full_name;
-                $user_rec->timecreated  =
-                $user_rec->timemodified = strtotime($lmb_data->update_date);
+            $user_rec->description  = $lmb_data->full_name;
+            $user_rec->timecreated  =
+            $user_rec->timemodified = strtotime($lmb_data->update_date);
 
-                // Insert a new Moodle user record
-                try
-                {
-                    if (true === ($rc = (boolean)($user_id = $this->moodleDB->insert_record(self::MOODLENT_USER, $user_rec)))) {
-                        $user_rec->id = $user_id;
-                        get_context_instance(CONTEXT_USER, $user_id);
-                        events_trigger('user_created', $user_rec);
-                    }
-                }
-                catch (Exception $exc)
-                {
-                    $this->log_process_exception($exc);
-                    $rc = false;
-                }
+            // Insert a new Moodle user record
+            try
+            {
+                $user_rec->id = $this->moodleDB->insert_record(self::MOODLENT_USER, $user_rec, true);
+                get_context_instance(CONTEXT_USER, $user_rec->id);
+                events_trigger('user_created', $user_rec);
+                $rc = true;
+            }
+            catch (Exception $exc)
+            {
+                $this->log_process_exception($exc);
+                $rc       =
+                $user_rec = false;
+            }
 
-                $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'insert', $rc);
-                return $rc;
+            $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'insert', $rc);
+            return $user_rec;
 
-            } // false === $user_rec
+        } // insert_user
 
 
-            // There is an existing Moodle user record ($user_rec) for the presented SCTID.
-            $user_rec->username = $username;
+
+        /**
+         * Upate a user record using information in the LMB message
+         *
+         * @acess       private
+         * @param       stdClass        $user_rec               The moodle user record to update
+         * @param       stdClass        $lmb_data               The LMB staging record (message received)
+         * @param       DOMXPath        $xpath                  The DOM Xpath with the XML message loaded
+         * @return      void
+         */
+        private function update_user(stdClass $user_rec, stdClass $lmb_data, DOMXPath $xpath)
+        {
+
+            // There is an existing Moodle user record ($user_rec)
+            // either already associated with the person record or
+            // one that matches up on the mnethostid/username values
 
             if ($this->config->person_firstname_changes) {
                 $user_rec->firstname = $lmb_data->given_name;
@@ -1697,34 +1787,36 @@
                 }
             }
 
-            // Update the existing Moodle user
+
+            // Update the existing Moodle user first, then check if any password change
+            // is needed, and do that secondly through the associated auth plugin
             try
             {
-                if (true === ($rc = $this->moodleDB->update_record(self::MOODLENT_USER, $user_rec))) {
-                    // Do we need to keep the password updated
-                    if ($this->config->person_password_changes) {
-                        // Fetch the auth plugin used, and if it allows
-                        // local passwords, update the field
-                        $auth_plugin = get_auth_plugin($user_rec->auth);
-                        if (!$auth_plugin->prevent_local_passwords() && $auth_plugin->authtype != self::OPT_AUTH_NOLOGIN) {
-                            $password = '';
-                            switch($this->config->person_password)
-                            {
-                                case self::OPT_PERSON_PASSWORD_USERID_LOGON:
-                                    $password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"Logon ID\"]/@PASSWORD)");
-                                    break;
-                                case self::OPT_PERSON_PASSWORD_USERID_SCTID:
-                                    $password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"SCTID\"]/@PASSWORD)");
-                                    break;
-                            }
-                            // Overwrite the current password only if there was a
-                            // new value present in the message.
-                            if ($password) {
-                                $auth_plugin->user_update_password($user_rec, $password);
-                            }
+                $this->moodleDB->update_record(self::MOODLENT_USER, $user_rec);
+                // Do we need to keep the password updated
+                if ($this->config->person_password_changes) {
+                    // Fetch the auth plugin used, and if it allows
+                    // local passwords, update the field
+                    $auth_plugin = get_auth_plugin($user_rec->auth);
+                    if (!$auth_plugin->prevent_local_passwords() && $auth_plugin->authtype != self::OPT_AUTH_NOLOGIN) {
+                        $password = '';
+                        switch($this->config->person_password)
+                        {
+                            case self::OPT_PERSON_PASSWORD_USERID_LOGON:
+                                $password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"Logon ID\"]/@PASSWORD)");
+                                break;
+                            case self::OPT_PERSON_PASSWORD_USERID_SCTID:
+                                $password = $xpath->evaluate("string(/PERSON/USERID[@USERIDTYPE = \"SCTID\"]/@PASSWORD)");
+                                break;
+                        }
+                        // Overwrite the current password only if there was a
+                        // new value present in the message.
+                        if ($password) {
+                            $auth_plugin->user_update_password($user_rec, $password);
                         }
                     }
                 }
+                $rc = true;
             }
             catch (Exception $exc)
             {
@@ -1733,9 +1825,71 @@
             }
 
             $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'update', $rc);
-            return $rc;
 
-        } // import_person_element
+        } // update_user
+
+
+
+        /**
+         * Process the person message with a recstatus=3
+         *
+         * @access  private
+         * @param   stdClass        $lmb_data       LMB staging record (message received)
+         * @return  boolean
+         */
+        private function delete_user(stdClass $lmb_data)
+        {
+
+            // If there is not a user association then nothing to do
+            if (!isset($lmb_data->userid_moodle) || empty($lmb_data->userid_moodle)) {
+                $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'delete', get_string('INF_USERDELETE_NOACTION', self::PLUGIN_NAME));
+                return true;
+            }
+
+            // Fetch the associated user
+            if (false === ($user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('id' => $lmb_data->userid_moodle)))) {
+                // Asked to delete a user who isn't there
+                $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'delete', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
+                return true;
+            }
+
+
+            $op = $this->config->person_delete;
+            switch($op)
+            {
+                case self::OPT_PERSON_DELETE_DELETE:
+                    // Let Moodle delete the user--this
+                    // will remove the user from the DB
+                    try
+                    {
+                        delete_user($user_rec);
+                        $lmb_data->userid_moodle = null;
+                        $this->moodleDB->update_record(self::SHEBANGENT_PERSON, $lmb_data);
+                        $rc = true;
+                    }
+                    catch (Exception $exc)
+                    {
+                        $this->log_process_exception($exc);
+                        $rc = false;
+                    }
+                    break;
+                case self::OPT_PERSON_DELETE_UNENROL:
+                    // Call the parent class' user_delete()
+                    // method, which will only find all of
+                    // the user's enrolments done with this
+                    // plugin, and remove them using a call
+                    // to unenrol_user().
+                    $this->user_delete($user_rec);
+                    break;
+                default:
+                    // Ignore the message
+                    $rc = get_string('INF_USERDELETE_NOACTION', self::PLUGIN_NAME);
+            }
+
+            $this->log_process_message(self::MOODLENT_USER, $user_rec->id, $op, $rc);
+            return (boolean)$rc;
+
+        } // delete_user
 
 
 
@@ -1941,7 +2095,7 @@
 
 
             // Will need the child course id and context for most everything
-            if (false === ($child_course_rec = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $lmb_data->child_source_id)))) {
+            if (false === ($child_course = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $lmb_data->child_source_id)))) {
                 $this->log_process_message(self::MOODLENT_COURSE, $lmb_data->child_source_id, 'select', get_string('ERR_COURSE_IDNUMBER', self::PLUGIN_NAME));
                 return false;
             }
@@ -1950,7 +2104,7 @@
             // The parent course may or may not exist yet. If this is the first
             // membership msg for the parent course, we will have to create it,
             // but we'll make that test later.
-            $parent_course_rec = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $lmb_data->parent_source_id));
+            $parent_course = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $lmb_data->parent_source_id));
 
 
             // If recstatus/status indicate an end to the parent child relationship
@@ -1958,7 +2112,7 @@
 
                 // Remove the parent-child association.
                 if ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_META) {
-                    if ($parent_course_rec && false !== ($enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course_rec->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course_rec->id)))) {
+                    if ($parent_course && false !== ($enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course->id)))) {
                         // Remove the child from the metacourse and enrollments will get sync'd
                         $meta_plugin->delete_instance($enroll_instance);
                         $rc = true;
@@ -2004,16 +2158,16 @@
             // message for a given parent course, so we need to check first that it
             // has been created. The LMB message only provides a source id for the
             // parent course, so let's set it up based on the given child course
-            if (!$parent_course_rec) {
+            if (!$parent_course) {
 
-                $parent_course_rec                  = clone $child_course_rec;
-                unset($parent_course_rec->id);
+                $parent_course_data                 = $this->create_emtpy_course_object();
 
-                $parent_course_rec->idnumber        = $lmb_data->parent_source_id;
-                $parent_course_rec->fullname        = $this->config->crosslist_fullname_prefix  . $parent_course_rec->fullname;
-                $parent_course_rec->shortname       = $this->config->crosslist_shortname_prefix . $parent_course_rec->shortname;
-                $parent_course_rec->timecreated     =
-                $parent_course_rec->timemodified    = strtotime($lmb_data->update_date);
+                $parent_course_data->idnumber       = $lmb_data->parent_source_id;
+                $parent_course_data->category       = $child_course->category;
+                $parent_course_data->fullname       = $this->config->crosslist_fullname_prefix  . $child_course->fullname;
+                $parent_course_data->shortname      = $this->config->crosslist_shortname_prefix . $child_course->shortname;
+                $parent_course_data->timecreated    =
+                $parent_course_data->timemodified   = strtotime($lmb_data->update_date);
 
                 try
                 {
@@ -2021,7 +2175,7 @@
                     // fix ups, such as blocks_add_default_course_blocks(),
                     // fix_course_sortorder(), mark_context_dirty(), etc.,
                     // but will also create the default (0) section row
-                    $course = create_course($parent_course_rec);
+                    $parent_course = create_course($parent_course_data);
                 }
                 catch (Exception $exc)
                 {
@@ -2030,33 +2184,33 @@
                     return false;
                 }
 
-            } // if (!$parent_course_rec)
+            } // if (!$parent_course)
 
 
             // At this point we have a parent course and a child course. The parent course
             // now needs an enroll plugin instance if there is not one already. Which plugin
             // is used depends on the cross-list method selected.
-            if ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_META && false === ($enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course_rec->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course_rec->id)))) {
-                $enroll_instance_id = $meta_plugin->add_instance($parent_course_rec, array('customint1' => $child_course_rec->id));
-                $meta_plugin->course_updated(false, $parent_course_rec, null);
-            } elseif ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_MERGE && false === ($enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course_rec->id, 'enrol' => $this->get_name())))) {
-                $enroll_instance_id = $this->add_instance($parent_course_rec);
+            if ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_META && false === ($enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course->id)))) {
+                $enroll_instance_id = $meta_plugin->add_instance($parent_course, array('customint1' => $child_course->id));
+                $meta_plugin->course_updated(false, $parent_course, null);
+            } elseif ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_MERGE && false === ($enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $this->get_name())))) {
+                $enroll_instance_id = $this->add_instance($parent_course);
             }
 
             // Hide the child course if the config says to do so
             if ($rc && $this->config->crosslist_hide_on_parent) {
-                $this->moodleDB->set_field(self::MOODLENT_COURSE, 'visible', 0, array('id' => $child_course_rec->id));
+                $this->moodleDB->set_field(self::MOODLENT_COURSE, 'visible', 0, array('id' => $child_course->id));
             }
 
             // If a group is needed, create one (if it does not exist) in the parent,
             // but named for the child section.
             if (isset($this->config->crosslist_groups) && !empty($this->config->crosslist_groups) && (!isset($lmb_data->group_id) || empty($lmb_data->group_id))) {
                 $group_rec = new stdClass();
-                $group_rec->courseid    = $parent_course_rec->id;
+                $group_rec->courseid    = $parent_course->id;
                 $group_rec->name        =
-                $group_rec->description = $child_course_rec->shortname;
+                $group_rec->description = $child_course->shortname;
                 if (false === ($group_rec->id = groups_create_group($group_rec))) {
-                    $this->log_process_message(self::MOODLENT_GROUP, $parent_course_rec->id, 'insert', get_string('ERR_CREATE_CROSSLIST_GROUP', self::PLUGIN_NAME));
+                    $this->log_process_message(self::MOODLENT_GROUP, $parent_course->id, 'insert', get_string('ERR_CREATE_CROSSLIST_GROUP', self::PLUGIN_NAME));
                     return false;
                 }
                 // Update the cross-list staging rec with the new group id
@@ -2071,8 +2225,7 @@
                     $this->log_process_message(self::SHEBANGENT_CROSSLIST, $lmb_data->id, 'update', get_string('ERR_UPDATE_CROSSLIST_GROUP', self::PLUGIN_NAME));
                     return false;
                 }
-
-            }
+            } // isset($this->config->crosslist_groups) ...
 
             return true;
 
@@ -2116,17 +2269,17 @@
                 return false;
             }
 
-            // Fetch the user. The message has the sourcedid/id, but since we put
-            // the SCTID (Banner) userid in the user's idnumber column we have to
-            // use our staging record, where we have both values, to cross-ref
+            // Fetch the user by joining with the staging record
+            // which has both the Luminis source id and Moodle
+            // user id values
             $query = "SELECT u.* "
                    . "  FROM {" . self::MOODLENT_USER . "} u "
                    . " INNER JOIN {" . self::SHEBANGENT_PERSON . "} p "
-                   . "    ON p.userid_sctid = u.idnumber "
+                   . "    ON p.userid_moodle = u.id "
                    . " WHERE p.source_id = :source_id";
             $parms = array('source_id' => $person_source_id);
 
-            if (false === ($user_rec = $this->moodleDB->get_record_sql($query, $parms, MUST_EXIST))) {
+            if (false === ($user_rec = $this->moodleDB->get_record_sql($query, $parms))) {
                 $this->log_process_message(self::MOODLENT_USER, $person_source_id, 'select', get_string('ERR_PERSON_SOURCE_ID', self::PLUGIN_NAME));
                 return false;
             }
@@ -2486,7 +2639,7 @@
                 return;
             }
 
-            // Was the last notification less than 60 minutes ago
+            // Was the last notification less than 30 minutes ago
             $last_notice_file = "{$this->moodleConfigs->dataroot}/" . self::PLUGIN_NAME . "/.monitor-last-notice";
             if (file_exists($last_notice_file) && (floor(($timestamp_array[0] - filemtime($last_notice_file)) / 60)) < self::MONITOR_NOTICES_INTERVAL) {
                 mtrace(get_string('INF_CRON_MONITOR_NOTICETHRESHOLD', self::PLUGIN_NAME));
