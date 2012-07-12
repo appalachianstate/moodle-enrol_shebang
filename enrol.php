@@ -858,7 +858,7 @@
                     list($key, $val) = $keyval;
                     // Revert any '&' back to '&amp;' so the
                     // text can be put into an XMLDocument
-                    $attr_list .= " {$key}=\"" . str_replace('&', '&amp;', $val) . "\"";
+                    $attr_list .= " {$key}=\"" . preg_replace(array('/</', '/>/', '/&/'), array('&lt;', '&gt;', '&amp;'), $val) . "\"";
                 }
             }
             $this->parseDataBuffer .= "<{$name}{$attr_list}>";
@@ -940,7 +940,7 @@
                 // element's opening tag. Also, because the xml_parser
                 // is translating '&amp;' into '&', we need to revert
                 // all of them before putting into an XMLDocument
-                $this->parseDataBuffer .= preg_replace(array('/\A\s+\z/', '/&/'), array('', '&amp;'), $data);
+                $this->parseDataBuffer .= preg_replace(array('/\A\s+\z/', '/</', '/>/', '/&/'), array('', '&lt;', '&gt;', '&amp;'), $data);
             }
         }
     
