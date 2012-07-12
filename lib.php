@@ -957,7 +957,7 @@
                     list($key, $val) = $keyval;
                     // Revert any '&' back to '&amp;' so the
                     // text can be put into an XMLDocument
-                    $attr_list .= " {$key}=\"" . str_replace('&', '&amp;', $val) . "\"";
+                    $attr_list .= " {$key}=\"" . preg_replace(array('/</', '/>/', '/&/'), array('&lt;', '&gt;', '&amp;'), $val) . "\"";
                 }
             }
             $this->parseDataBuffer .= "<{$name}{$attr_list}>";
@@ -1002,11 +1002,20 @@
                 case self::LMBTAG_GROUP:
                 case self::LMBTAG_PERSON:
                 case self::LMBTAG_MEMBERSHIP:
-                    $doc = new DOMDocument();
-                    $doc->loadXML($this->parseDataBuffer);
-                    $method = "import_" . strtolower($name) . "_element";
 
-                    $this->lastRetCode = $this->$method($doc);
+                    $doc = new DOMDocument();
+                    try
+                    {
+                        $doc->loadXML($this->parseDataBuffer);
+                        $method = "import_" . strtolower($name) . "_element";
+                        $this->lastRetCode = $this->$method($doc);
+                    }
+                    catch (Exception $exc)
+                    {
+                        $this->log_process_exception($exc);
+                        $this->log_process_message($name, "", "", $this->parseDataBuffer);
+                        $this->lastRetCode = false;
+                    }
 
                     unset($doc);
                     $this->buffering = false;
@@ -1014,6 +1023,7 @@
                     break;
 
               //default: Nothing more to do otherwise
+
             }
 
         } // parser_end_element
@@ -1040,7 +1050,7 @@
                 // element's opening tag. Also, because the xml_parser
                 // is translating '&amp;' into '&', we need to revert
                 // all of them before putting into an XMLDocument
-                $this->parseDataBuffer .= preg_replace(array('/\A\s+\z/', '/&/'), array('', '&amp;'), $data);
+                $this->parseDataBuffer .= preg_replace(array('/\A\s+\z/', '/</', '/>/', '/&/'), array('', '&lt;', '&gt;', '&amp;'), $data);
             }
 
         } // parser_character_data
@@ -1204,6 +1214,12 @@
             $lmb_data->update_date       = date(self::DATEFMT_SQL_VALUE);
 
 
+
+            // Validate the source_id
+            if (empty($lmb_data->source_id)) {
+                $this->log_process_message(self::SHEBANGENT_SECTION, "", "", get_string('ERR_COURSE_IDNUMBER', self::PLUGIN_NAME));
+                return false;
+            }
 
             // If recstatus not present, default is add (1)
             if (!isset($lmb_data->recstatus) || empty($lmb_data->recstatus)) $lmb_data->recstatus = self::RECSTATUS_ADD;
@@ -1493,6 +1509,19 @@
             $lmb_data->update_date   = date(self::DATEFMT_SQL_VALUE);
 
 
+
+            // Validate the source_id
+            if (empty($lmb_data->source_id)) {
+                $this->log_process_message(self::SHEBANGENT_PERSON, "", "", get_string('ERR_PERSON_SOURCE_ID', self::PLUGIN_NAME));
+                return false;
+            }
+
+            // Certain columns need to be null proper to avoid
+            // the Oracle dirty hack when binding parm values
+            if (empty($lmb_data->userid_logon)) $lmb_data->userid_logon = null;
+            if (empty($lmb_data->userid_sctid)) $lmb_data->userid_sctid = null;
+            if (empty($lmb_data->userid_email)) $lmb_data->userid_email = null;
+            if (empty($lmb_data->email))        $lmb_data->email        = null;
 
             // If recstatus not present, default is add (1)
             if (!isset($lmb_data->recstatus) || empty($lmb_data->recstatus)) $lmb_data->recstatus = self::RECSTATUS_ADD;
