@@ -1608,7 +1608,7 @@
                     // The currently associated user id is no longer valid and
                     // should be discarded
                     $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_moodle, 'select', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
-                    unset($lmb_data->userid_moodle);
+                    $lmb_data->userid_moodle = null;
                 }
             }
 
@@ -1791,7 +1791,10 @@
                 $user_rec->lastname = $lmb_data->family_name;
             }
 
-            $user_rec->email = $lmb_data->email;
+            // Moodle user table does not allow null for email (or
+            // much else), so make sure the Oracle dirty hack gets
+            // hold of this column.
+            $user_rec->email = ($lmb_data->email == null) ? '' : $lmb_data->email;
 
             if ($this->config->person_telephone && $this->config->person_telephone_changes) {
                 $user_rec->phone1 = $lmb_data->telephone;
