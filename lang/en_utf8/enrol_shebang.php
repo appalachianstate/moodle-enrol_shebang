@@ -23,6 +23,7 @@
      */
 
 /* CONFIG STRINGS */
+$string['pluginname']                       =
 $string['enrolname']                        = 'SHEBanG for SunGard Banner/LMB';
 $string['description']                      = 'This enrolment module provides a way to consume SunGard HE Banner&reg; messages generated from Luminis Message Broker. This module is not a SunGard product, and is neither endorsed nor supported by SunGard.';
 
