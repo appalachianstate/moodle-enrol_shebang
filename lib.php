@@ -279,7 +279,8 @@
         public static $courseNameTokens = array('/%termcode%/i', '/%termdesc%/i',
                                                 '/%fullname%/i', '/%longname%/i', '/%shortname%/i', '/%sourceid%/i',
                                                 '/%deptcode%/i', '/%deptname%/i',
-                                                '/%parentcode%/i');
+                                                '/%parentcode%/i',
+                                                '/%coursenum%/i', '/%sectionnum%/i');
 
         /**
          * Array of this plugin's config names, keyed with the name, and a boolean value indicating whether
@@ -2551,17 +2552,18 @@
 
             // We will assume that the dept code, not explicitly identified in the message
             // is the the prefix part of the long description delimited by a hyphen (-).
-            $dept_code = '';
-            $course_name_parts = explode('-', $lmb_data->desc_long);
-            if (count($course_name_parts) > 1) {
-                $dept_code = $course_name_parts[0];
-            }
+            list($dept_code, $course_num, $section_num) = explode('-', $lmb_data->desc_long);
+
+            if (!isset($dept_code))   $dept_code   = '';
+            if (!isset($course_num))  $course_num  = '';
+            if (!isset($section_num)) $section_num = '';
 
             return preg_replace(self::$courseNameTokens,
                                 array($lmb_data->term, $term_desc,
                                       $lmb_data->desc_full, $lmb_data->desc_long, $lmb_data->desc_short, $lmb_data->source_id,
                                       $dept_code, $lmb_data->dept_name,
-                                      $lmb_data->course_source_id),
+                                      $lmb_data->course_source_id,
+                                      $course_num, $section_num),
                                 $pattern);
 
         } // replace_name_tokens
