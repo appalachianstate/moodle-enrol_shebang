@@ -1324,7 +1324,7 @@
         {
 
             // Course isn't there, so fix up a minimal one and add it
-            $new_course_data = $this->create_emtpy_course_object();
+            $new_course_data = $this->create_empty_course_object();
 
             // Determine from the configs the category to use for the new course
             switch($this->config->course_category)
@@ -2216,7 +2216,7 @@
             // parent course, so let's set it up based on the given child course
             if (!$parent_course) {
 
-                $parent_course_data                 = $this->create_emtpy_course_object();
+                $parent_course_data                 = $this->create_empty_course_object();
 
                 $parent_course_data->idnumber       = $lmb_data->parent_source_id;
                 $parent_course_data->category       = $child_course->category;
@@ -2378,7 +2378,7 @@
          * @access  private
          * @return  stdClass                An object with properties needed for Moodle course
          */
-        private function create_emtpy_course_object()
+        private function create_empty_course_object()
         {
 
             /* Don't want to fetch these configs everytime this
@@ -2422,7 +2422,7 @@
 
             return $course_rec;
 
-        } // create_emtpy_course_object
+        } // create_empty_course_object
 
 
 
