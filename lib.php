@@ -294,8 +294,9 @@
             'logging_onlyerrors'             => array('type' => 'checkbox', 'default' => '0'),
             'logging_logxml'                 => array('type' => 'checkbox', 'default' => '1'),
             'logging_nologlock'              => array('type' => 'checkbox', 'default' => '0'),
+            'logging_dirpath'                => array('type' => 'text',     'default' => ''),
 
-            'secure_username'                => array('type' => 'text', 	'default' => ''),
+            'secure_username'                => array('type' => 'text',     'default' => ''),
             'secure_passwd'                  => array('type' => 'text',     'default' => ''),
             'secure_method'                  => array('type' => 'text',     'default' => self::OPT_SECURE_METHOD_DIGEST),
 
@@ -311,29 +312,29 @@
             'monitor_start_min'              => array('type' => 'number',   'default' => self::DEF_MONITOR_START_MIN),
             'monitor_stop_hour'              => array('type' => 'number',   'default' => self::DEF_MONITOR_STOP_HOUR),
             'monitor_stop_min'               => array('type' => 'number',   'default' => self::DEF_MONITOR_STOP_MIN),
-            'monitor_threshold'	             => array('type' => 'number',   'default' => self::DEF_MONITOR_THRESHOLD),
+            'monitor_threshold'              => array('type' => 'number',   'default' => self::DEF_MONITOR_THRESHOLD),
             'monitor_emails'                 => array('type' => 'text',     'default' => ''),
 
-            'person_create'   	   		     => array('type' => 'checkbox', 'default' => '1'),
-            'person_delete'  	   		     => array('type' => 'text',     'default' => ''),
-            'person_username'    	         => array('type' => 'text',     'default' => self::OPT_PERSON_USERNAME_USERID_LOGON),
-            'person_username_failsafe'	     => array('type' => 'checkbox', 'default' => '0'),
-            'person_auth_method'    	     => array('type' => 'text',     'default' => self::DEF_PERSON_AUTH_METHOD),
-            'person_shib_domain'   		     => array('type' => 'text',     'default' => ''),
-            'person_password'       		 => array('type' => 'text',     'default' => ''),
+            'person_create'                  => array('type' => 'checkbox', 'default' => '1'),
+            'person_delete'                  => array('type' => 'text',     'default' => ''),
+            'person_username'                => array('type' => 'text',     'default' => self::OPT_PERSON_USERNAME_USERID_LOGON),
+            'person_username_failsafe'       => array('type' => 'checkbox', 'default' => '0'),
+            'person_auth_method'             => array('type' => 'text',     'default' => self::DEF_PERSON_AUTH_METHOD),
+            'person_shib_domain'             => array('type' => 'text',     'default' => ''),
+            'person_password'                => array('type' => 'text',     'default' => ''),
             'person_password_changes'        => array('type' => 'checkbox', 'default' => '0'),
             'person_firstname_changes'       => array('type' => 'checkbox', 'default' => '1'),
-            'person_lastname_changes'	     => array('type' => 'checkbox', 'default' => '1'),
-            'person_telephone'     		     => array('type' => 'checkbox', 'default' => '1'),
-            'person_telephone_changes'		 => array('type' => 'checkbox', 'default' => '1'),
+            'person_lastname_changes'        => array('type' => 'checkbox', 'default' => '1'),
+            'person_telephone'               => array('type' => 'checkbox', 'default' => '1'),
+            'person_telephone_changes'       => array('type' => 'checkbox', 'default' => '1'),
             'person_address'                 => array('type' => 'checkbox', 'default' => '1'),
-            'person_address_changes'	     => array('type' => 'checkbox', 'default' => '1'),
-            'person_locality'	             => array('type' => 'text',     'default' => self::OPT_PERSON_LOCALITY_IFF),
-            'person_locality_default'		 => array('type' => 'text',     'default' => ''),
+            'person_address_changes'         => array('type' => 'checkbox', 'default' => '1'),
+            'person_locality'                => array('type' => 'text',     'default' => self::OPT_PERSON_LOCALITY_IFF),
+            'person_locality_default'        => array('type' => 'text',     'default' => ''),
             'person_country'                 => array('type' => 'text',     'default' => self::DEF_PERSON_COUNTRY),
             'person_idnumber_sctid'          => array('type' => 'checkbox', 'default' => 0),
 
-            'course_category'    	         => array('type' => 'text',     'default' => self::OPT_COURSE_CATEGORY_TERM),
+            'course_category'                => array('type' => 'text',     'default' => self::OPT_COURSE_CATEGORY_TERM),
             'course_category_id'             => array('type' => 'number',   'default' => 0),
             'course_sections_equal_weeks'    => array('type' => 'checkbox', 'default' => '1'),
             'course_fullname_changes'        => array('type' => 'checkbox', 'default' => '0'),
@@ -349,7 +350,7 @@
             'crosslist_method'               => array('type' => 'text',     'default' => self::OPT_CROSSLIST_METHOD_META),
             'crosslist_groups'               => array('type' => 'checkbox', 'default' => '0'),
             'crosslist_fullname_prefix'      => array('type' => 'text',     'default' => ''),
-            'crosslist_shortname_prefix'	 => array('type' => 'text',     'default' => ''),
+            'crosslist_shortname_prefix'     => array('type' => 'text',     'default' => ''),
             'crosslist_hide_on_parent'       => array('type' => 'checkbox', 'default' => '0'),
 
             'enroll_rolemap_01'              => array('type' => 'number',   'default' => '0'),
@@ -408,12 +409,13 @@
             $this->pluginDir        = $this->moodleConfigs->dirroot . self::PLUGIN_PATH . "/";
             $this->pluginUrl        = $this->moodleConfigs->wwwroot . self::PLUGIN_PATH . "/";
 
+            $logging_dirpath        = empty($this->config->logging_dirpath)
+                                    ? $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME
+                                    : $this->config->logging_dirpath;
             $log_date_suffix        = date(self::DATEFMT_LOG_FILEX);
-            $this->messageLogPath   = $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME . "/"
-                                    . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
 
-            $this->processLogPath   = $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME . "/"
-                                    . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
+            $this->messageLogPath   = $logging_dirpath . "/" . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
+            $this->processLogPath   = $logging_dirpath . "/" . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
 
 
             $roles_array = get_all_roles();
@@ -530,26 +532,26 @@
                     }
                     break;
 
-            	case 'monitor_start_min' :
-            	case 'monitor_stop_min'  :
-            	    $value = (int)$value;
-            	    if ($value < 0 || $value > 59) {
-            	        $value = self::$configDefaults[$name]['default'];
-            	    }
-            	    break;
-
-            	case 'monitor_threshold' :
-            	    $value = (int)$value;
-            	    if ($value < self::MIN_MONITOR_THRESHOLD || $value > self::MAX_MONITOR_THRESHOLD) {
-            	        $value = self::$configDefaults[$name]['default'];
-            	    }
+                case 'monitor_start_min' :
+                case 'monitor_stop_min'  :
+                    $value = (int)$value;
+                    if ($value < 0 || $value > 59) {
+                        $value = self::$configDefaults[$name]['default'];
+                    }
                     break;
-            	case 'course_parent_striplead' :
-            	    $value = (int)$value;
-            	    if ($value < 0 || $value > self::MAX_COURSE_PARENT_STRIPLEAD) {
-            	        $value = self::$configDefaults[$name]['default'];
-            	    }
-            	    break;
+
+                case 'monitor_threshold' :
+                    $value = (int)$value;
+                    if ($value < self::MIN_MONITOR_THRESHOLD || $value > self::MAX_MONITOR_THRESHOLD) {
+                        $value = self::$configDefaults[$name]['default'];
+                    }
+                    break;
+                case 'course_parent_striplead' :
+                    $value = (int)$value;
+                    if ($value < 0 || $value > self::MAX_COURSE_PARENT_STRIPLEAD) {
+                        $value = self::$configDefaults[$name]['default'];
+                    }
+                    break;
             }
 
             $this->config->$name = $value;
@@ -1550,7 +1552,7 @@
             // If recstatus not present, default is add (1)
             if (!isset($lmb_data->recstatus) || empty($lmb_data->recstatus)) $lmb_data->recstatus = self::RECSTATUS_ADD;
 
-            // Fetch the existing stagin record, or insert a new one
+            // Fetch the existing staging record, or insert a new one
             try
             {
                 if (false === ($old_rec = $this->moodleDB->get_record(self::SHEBANGENT_PERSON, array('source_id' => $lmb_data->source_id)))) {
@@ -1650,7 +1652,7 @@
                     if ($this->config->person_create) {
                         $user_rec = $this->insert_user($lmb_data, $username, $xpath);
                     } else {
-                        $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, '', get_string('INF_USERCREATE_NOACTION', self::PLUGIN_NAME));
+                        $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, '', get_string('INF_USERCREATE_NOACTION', self::PLUGIN_NAME));
                         return true;
                     }
                 } else {
@@ -1785,7 +1787,7 @@
                 $user_rec = false;
             }
 
-            $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'insert', $rc);
+            $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, 'insert', $rc);
             return $user_rec;
 
         } // insert_user
@@ -1880,7 +1882,7 @@
                 $rc = false;
             }
 
-            $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'update', $rc);
+            $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, 'update', $rc);
 
         } // update_user
 
@@ -1898,14 +1900,14 @@
 
             // If there is not a user association then nothing to do
             if (!isset($lmb_data->userid_moodle) || empty($lmb_data->userid_moodle)) {
-                $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'delete', get_string('INF_USERDELETE_NOACTION', self::PLUGIN_NAME));
+                $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, 'delete', get_string('INF_USERDELETE_NOACTION', self::PLUGIN_NAME));
                 return true;
             }
 
             // Fetch the associated user
             if (false === ($user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('id' => $lmb_data->userid_moodle)))) {
                 // Asked to delete a user who isn't there
-                $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_sctid, 'delete', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
+                $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, 'delete', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
                 return true;
             }
 
@@ -1942,7 +1944,7 @@
                     $rc = get_string('INF_USERDELETE_NOACTION', self::PLUGIN_NAME);
             }
 
-            $this->log_process_message(self::MOODLENT_USER, $user_rec->id, $op, $rc);
+            $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, $op, $rc);
             return (boolean)$rc;
 
         } // delete_user
@@ -2053,7 +2055,7 @@
             // Will need to know if the specified section is part of a course cross-list
             $crosslist_rec = !empty($this->config->crosslist_enabled)
                            ? $this->moodleDB->get_record_select(self::SHEBANGENT_CROSSLIST,
-                           										"status = :status and recstatus != :recstatus and child_source_id = :child_source_id",
+                                                                "status = :status and recstatus != :recstatus and child_source_id = :child_source_id",
                                                                 array('status' => self::STATUS_ACTIVE, 'recstatus' => self::RECSTATUS_DELETE, 'child_source_id' => $lmb_data->section_source_id))
                            : null;
 

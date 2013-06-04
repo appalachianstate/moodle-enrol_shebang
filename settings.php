@@ -37,6 +37,7 @@
      * logging_onlyerrors
      * logging_logxml
      * logging_nologlock
+     * logging_dirpath
      *
      * secure_username
      * secure_passwd
@@ -124,6 +125,8 @@
         $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/logging_logxml',     get_string('LBL_LOGGING_LOGXML',     enrol_shebang_plugin::PLUGIN_NAME), '', '1'));
 
         $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/logging_nologlock',  get_string('LBL_LOGGING_NOLOGLOCK',  enrol_shebang_plugin::PLUGIN_NAME), '', '0'));
+
+        $settings->add(new admin_setting_configtext(enrol_shebang_plugin::PLUGIN_NAME . '/logging_dirpath', get_string('LBL_LOGGING_DIRPATH', enrol_shebang_plugin::PLUGIN_NAME), '', ''));
 
 
         /*

@@ -38,6 +38,7 @@ $string['LBL_LOGGING']                      = 'Logging';
 $string['LBL_LOGGING_ONLYERRORS']           = 'Write only errors';
 $string['LBL_LOGGING_LOGXML']               = 'Write message XML';
 $string['LBL_LOGGING_NOLOGLOCK']            = 'Suspend Locking';
+$string['LBL_LOGGING_DIRPATH']              = 'Log Directory Path';
 
 
 $string['LBL_SECURE']                       = 'Security (Connections)';
