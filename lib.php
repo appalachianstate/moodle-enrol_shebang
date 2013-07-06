@@ -300,14 +300,7 @@
             'secure_passwd'                  => array('type' => 'text',     'default' => ''),
             'secure_method'                  => array('type' => 'text',     'default' => self::OPT_SECURE_METHOD_DIGEST),
 
-            'monitor_enabled'                => array('type' => 'checkbox', 'default' => '0'),
-            'monitor_weekdays_0'             => array('type' => 'checkbox', 'default' => '0'),
-            'monitor_weekdays_1'             => array('type' => 'checkbox', 'default' => '0'),
-            'monitor_weekdays_2'             => array('type' => 'checkbox', 'default' => '0'),
-            'monitor_weekdays_3'             => array('type' => 'checkbox', 'default' => '0'),
-            'monitor_weekdays_4'             => array('type' => 'checkbox', 'default' => '0'),
-            'monitor_weekdays_5'             => array('type' => 'checkbox', 'default' => '0'),
-            'monitor_weekdays_6'             => array('type' => 'checkbox', 'default' => '0'),
+            'monitor_weekdays'               => array('type' => 'multi',    'default' => ''),
             'monitor_start_hour'             => array('type' => 'number',   'default' => self::DEF_MONITOR_START_HOUR),
             'monitor_start_min'              => array('type' => 'number',   'default' => self::DEF_MONITOR_START_MIN),
             'monitor_stop_hour'              => array('type' => 'number',   'default' => self::DEF_MONITOR_STOP_HOUR),
@@ -332,10 +325,10 @@
             'person_locality'                => array('type' => 'text',     'default' => self::OPT_PERSON_LOCALITY_IFF),
             'person_locality_default'        => array('type' => 'text',     'default' => ''),
             'person_country'                 => array('type' => 'text',     'default' => self::DEF_PERSON_COUNTRY),
-            'person_idnumber_sctid'          => array('type' => 'checkbox', 'default' => 0),
+            'person_idnumber_sctid'          => array('type' => 'checkbox', 'default' => '0'),
 
             'course_category'                => array('type' => 'text',     'default' => self::OPT_COURSE_CATEGORY_TERM),
-            'course_category_id'             => array('type' => 'number',   'default' => 0),
+            'course_category_id'             => array('type' => 'number',   'default' => '1'),
             'course_sections_equal_weeks'    => array('type' => 'checkbox', 'default' => '1'),
             'course_fullname_changes'        => array('type' => 'checkbox', 'default' => '0'),
             'course_shortname_changes'       => array('type' => 'checkbox', 'default' => '0'),
@@ -371,6 +364,13 @@
          */
         private $courseInserted         = false;
 
+        /**
+         * Where do the process, message logs go
+         *
+         * @var string
+         * @access private
+         */
+        private $logging_dirpath        = '';
 
 
         /* -------------------------------------------------------------------
@@ -409,13 +409,13 @@
             $this->pluginDir        = $this->moodleConfigs->dirroot . self::PLUGIN_PATH . "/";
             $this->pluginUrl        = $this->moodleConfigs->wwwroot . self::PLUGIN_PATH . "/";
 
-            $logging_dirpath        = empty($this->config->logging_dirpath)
+            $this->logging_dirpath  = empty($this->config->logging_dirpath)
                                     ? $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME
                                     : $this->config->logging_dirpath;
             $log_date_suffix        = date(self::DATEFMT_LOG_FILEX);
 
-            $this->messageLogPath   = $logging_dirpath . "/" . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
-            $this->processLogPath   = $logging_dirpath . "/" . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
+            $this->messageLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
+            $this->processLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
 
 
             $roles_array = get_all_roles();
@@ -479,85 +479,6 @@
             }
 
         } // load_config
-
-
-
-        /**
-         * Overrides the parent class' method to save plugin config values
-         *
-         * @access public
-         * @param  string $name name of config
-         * @param  string $value string config value, null means reset to default
-         * @return void
-         */
-        public function set_config($name, $value)
-        {
-
-            if (!array_key_exists($name, self::$configDefaults))
-                return;
-
-            $this->load_config();
-
-            // Do some input validation here
-            if ($value === null) {
-
-                // Reset to default value
-                $value = self::$configDefaults[$name]['default'];
-
-            } elseif (self::$configDefaults[$name]['type'] == 'checkbox') {
-
-                // Either a 1 or 0 allowed
-                if ($value != "1" && $value != "0") {
-                    $value = self::$configDefaults[$name]['default'];
-                }
-
-            } elseif (self::$configDefaults[$name]['type'] == 'number' && !is_number($value)) {
-
-                $value = self::$configDefaults[$name]['default'];
-
-            } else {
-
-                $value = trim($value);
-
-            }
-
-            // Max and min checks
-            switch ($name)
-            {
-                case 'monitor_start_hour':
-                case 'monitor_stop_hour' :
-                    $value = (int)$value;
-                    if ($value < 0 || $value > 23) {
-                        $value = self::$configDefaults[$name]['default'];
-                    }
-                    break;
-
-                case 'monitor_start_min' :
-                case 'monitor_stop_min'  :
-                    $value = (int)$value;
-                    if ($value < 0 || $value > 59) {
-                        $value = self::$configDefaults[$name]['default'];
-                    }
-                    break;
-
-                case 'monitor_threshold' :
-                    $value = (int)$value;
-                    if ($value < self::MIN_MONITOR_THRESHOLD || $value > self::MAX_MONITOR_THRESHOLD) {
-                        $value = self::$configDefaults[$name]['default'];
-                    }
-                    break;
-                case 'course_parent_striplead' :
-                    $value = (int)$value;
-                    if ($value < 0 || $value > self::MAX_COURSE_PARENT_STRIPLEAD) {
-                        $value = self::$configDefaults[$name]['default'];
-                    }
-                    break;
-            }
-
-            $this->config->$name = $value;
-            set_config($name, $value, self::PLUGIN_NAME);
-
-        }
 
 
 
@@ -720,9 +641,9 @@
             }
 
             fwrite($fp, date(self::DATEFMT_LOG_ENTRY)
-                      . "Exception Code: " . $exc->getCode() . "\n"
+                      . "|Exception Code: " . $exc->getCode() . "\n"
                       . "In File: " . $exc->getFile() . ":" . $exc->getLine() . "\n"
-                      . $exc->getMessage() . "\n"
+                      . "Message: " . $exc->getMessage() . (property_exists($exc, 'error') ? ", " . $exc->error : "") . "\n"
                       . $exc->getTraceAsString() . "\n");
 
             if (!fclose($fp))  {
@@ -1616,7 +1537,11 @@
             // If Shibboleth username domain is specified, append
             // it to the username so we keep universal uniqueness
             if ($this->config->person_auth_method == self::OPT_AUTH_SHIBBOLETH) {
-                $username .= trim($this->config->person_shib_domain);
+                $userdomain = trim($this->config->person_shib_domain);
+                if ($userdomain && substr($userdomain, 0, 1) != '@') {
+                    $userdomain = '@' . $userdomain;
+                }
+                $username .= $userdomain;
             }
 
             $username = strtolower($username);
@@ -1630,7 +1555,7 @@
             $user_rec = false;
             // Try to fetch the user rec
             if (isset($lmb_data->userid_moodle) && !empty($lmb_data->userid_moodle)) {
-                if (false === ($user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('id' => $lmb_data->userid_moodle)))) {
+                if (false === ($user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('id' => $lmb_data->userid_moodle, 'deleted' => 0)))) {
                     // The currently associated user id is no longer valid and
                     // should be discarded
                     $this->log_process_message(self::MOODLENT_USER, $lmb_data->userid_moodle, 'select', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
@@ -1645,19 +1570,21 @@
                 $user_rec = $this->moodleDB->get_record(self::MOODLENT_USER, array('mnethostid' => $this->moodleConfigs->mnet_localhost_id, 'username' => $username));
             }
 
+            $insert_result =
+            $update_result = true;
             try
             {
                 // If still no user rec then need to add one if configs allow
                 if (false === $user_rec) {
                     if ($this->config->person_create) {
-                        $user_rec = $this->insert_user($lmb_data, $username, $xpath);
+                        $insert_result = (boolean)($user_rec = $this->insert_user($lmb_data, $username, $xpath));
                     } else {
                         $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, '', get_string('INF_USERCREATE_NOACTION', self::PLUGIN_NAME));
                         return true;
                     }
                 } else {
                     // Found a user rec so update it with message info
-                    $this->update_user($user_rec, $lmb_data, $xpath);
+                    $update_result = $this->update_user($user_rec, $lmb_data, $xpath);
                 }
 
                 // If the user association hasn't been recorded yet then do it
@@ -1672,7 +1599,7 @@
                 return false;
             }
 
-            return true;
+            return $insert_result && $update_result;
 
         } // import_person_element
 
@@ -1778,16 +1705,14 @@
                 $user_rec->id = $this->moodleDB->insert_record(self::MOODLENT_USER, $user_rec, true);
                 get_context_instance(CONTEXT_USER, $user_rec->id);
                 events_trigger('user_created', $user_rec);
-                $rc = true;
             }
             catch (Exception $exc)
             {
                 $this->log_process_exception($exc);
-                $rc       =
                 $user_rec = false;
             }
 
-            $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, 'insert', $rc);
+            $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, 'insert', (boolean)$user_rec);
             return $user_rec;
 
         } // insert_user
@@ -1801,7 +1726,7 @@
          * @param       stdClass        $user_rec               The moodle user record to update
          * @param       stdClass        $lmb_data               The LMB staging record (message received)
          * @param       DOMXPath        $xpath                  The DOM Xpath with the XML message loaded
-         * @return      void
+         * @return      boolean                                 Success or failure
          */
         private function update_user(stdClass $user_rec, stdClass $lmb_data, DOMXPath $xpath)
         {
@@ -1817,10 +1742,12 @@
                 $user_rec->lastname = $lmb_data->family_name;
             }
 
-            // Moodle user table does not allow null for email (or
-            // much else), so make sure the Oracle dirty hack gets
-            // hold of this column.
-            $user_rec->email = ($lmb_data->email == null) ? '' : $lmb_data->email;
+            // Only update the Moodle user email column value if a
+            // value was provided in the LMB message, otherwise leave
+            // it unchanged. It should never be null (or an empty str)
+            if (!empty($lmb_data->email)) {
+                $user_rec->email = $lmb_data->email;
+            }
 
             if ($this->config->person_telephone && $this->config->person_telephone_changes) {
                 $user_rec->phone1 = $lmb_data->telephone;
@@ -1848,6 +1775,7 @@
 
             // Update the existing Moodle user first, then check if any password change
             // is needed, and do that secondly through the associated auth plugin
+            $rc = true;
             try
             {
                 $this->moodleDB->update_record(self::MOODLENT_USER, $user_rec);
@@ -1874,7 +1802,6 @@
                         }
                     }
                 }
-                $rc = true;
             }
             catch (Exception $exc)
             {
@@ -1883,6 +1810,7 @@
             }
 
             $this->log_process_message(self::MOODLENT_USER, $lmb_data->source_id, 'update', $rc);
+            return $rc;
 
         } // update_user
 
@@ -2739,8 +2667,8 @@
             mtrace(get_string('INF_CRON_MONITOR_START', self::PLUGIN_NAME));
 
             // Check that monitor is enabled
-            if (   !isset($this->config->monitor_enabled) || empty($this->config->monitor_enabled)
-                || !isset($this->config->monitor_emails)  || empty($this->config->monitor_emails)) {
+            if (   !isset($this->config->monitor_weekdays) || empty($this->config->monitor_weekdays)
+                || !isset($this->config->monitor_emails)   || empty($this->config->monitor_emails)) {
                 mtrace(get_string('INF_CRON_MONITOR_DISABLED', self::PLUGIN_NAME));
                 return;
             }
@@ -2753,8 +2681,9 @@
             // Check day of week and time of day
             $timestamp_array = getdate();
 
-            $weekdays_config_name = "monitor_weekdays_{$timestamp_array['wday']}";
-            if (!isset($this->config->$weekdays_config_name) || empty($this->config->$weekdays_config_name)) {
+            // Admin setting for multicheckbox stored as comma delimited
+            // string of key values.
+            if (!array_key_exists($timestamp_array['wday'], array_fill_keys(explode(',', $this->config->monitor_weekdays), 1))) {
                 mtrace(get_string('INF_CRON_MONITOR_WRONGDAY', self::PLUGIN_NAME));
                 return;
             }
@@ -2797,8 +2726,8 @@
                 return;
             }
 
-            // Was the last notification less than 30 minutes ago
-            $last_notice_file = "{$this->moodleConfigs->dataroot}/" . self::PLUGIN_NAME . "/.monitor-last-notice";
+            // Was the last notification less than the fixed interval
+            $last_notice_file = "{$this->logging_dirpath}/.shebang-monitor-last-notice";
             if (file_exists($last_notice_file) && (floor(($timestamp_array[0] - filemtime($last_notice_file)) / 60)) < self::MONITOR_NOTICES_INTERVAL) {
                 mtrace(get_string('INF_CRON_MONITOR_NOTICETHRESHOLD', self::PLUGIN_NAME));
                 return;

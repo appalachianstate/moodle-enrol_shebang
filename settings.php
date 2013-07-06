@@ -43,11 +43,10 @@
      * secure_passwd
      * secure_method
      *
-     * monitor_enabled
-     * monitor_weekdays_0 ... monitor_weekdays_6
-     * monitor_start_hour,
+     * monitor_weekdays
+     * monitor_start_hour
      * monitor_start_min
-     * monitor_stop_hour,
+     * monitor_stop_hour
      * monitor_stop_min
      * monitor_threshold
      * monitor_emails
@@ -126,7 +125,7 @@
 
         $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/logging_nologlock',  get_string('LBL_LOGGING_NOLOGLOCK',  enrol_shebang_plugin::PLUGIN_NAME), '', '0'));
 
-        $settings->add(new admin_setting_configtext(enrol_shebang_plugin::PLUGIN_NAME . '/logging_dirpath', get_string('LBL_LOGGING_DIRPATH', enrol_shebang_plugin::PLUGIN_NAME), '', ''));
+        $settings->add(new admin_setting_configdirectory(enrol_shebang_plugin::PLUGIN_NAME . '/logging_dirpath', get_string('LBL_LOGGING_DIRPATH', enrol_shebang_plugin::PLUGIN_NAME), '', ''));
 
 
         /*
@@ -150,7 +149,7 @@
          */
         $settings->add(new admin_setting_heading(enrol_shebang_plugin::PLUGIN_NAME . '_monitor', get_string('LBL_MONITOR', enrol_shebang_plugin::PLUGIN_NAME) . $OUTPUT->help_icon('LBL_MONITOR', enrol_shebang_plugin::PLUGIN_NAME), ''));
 
-        $settings->add(new admin_setting_configmulticheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/monitor_weekdays', get_string('LBL_MONITOR_WEEKDAYS', enrol_shebang_plugin::PLUGIN_NAME), '', '',
+        $settings->add(new admin_setting_configmulticheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/monitor_weekdays', get_string('LBL_MONITOR_WEEKDAYS', enrol_shebang_plugin::PLUGIN_NAME), '', array(),
             array(
               '0' => get_string('sun', 'calendar'),
               '1' => get_string('mon', 'calendar'),
@@ -160,9 +159,9 @@
               '5' => get_string('fri', 'calendar'),
               '6' => get_string('sat', 'calendar')
             )));
-        $settings->add(new admin_setting_configtime(enrol_shebang_plugin::PLUGIN_NAME . '/monitor_start_hour', enrol_shebang_plugin::PLUGIN_NAME . '/monitor_start_min', get_string('LBL_MONITOR_START', enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_MONITOR_START', enrol_shebang_plugin::PLUGIN_NAME), array('h' => enrol_shebang_plugin::DEF_MONITOR_START_HOUR, 'm' => enrol_shebang_plugin::DEF_MONITOR_START_MIN)));
+        $settings->add(new admin_setting_configtime(enrol_shebang_plugin::PLUGIN_NAME . '/monitor_start_hour', 'monitor_start_min', get_string('LBL_MONITOR_START', enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_MONITOR_START', enrol_shebang_plugin::PLUGIN_NAME), array('h' => enrol_shebang_plugin::DEF_MONITOR_START_HOUR, 'm' => enrol_shebang_plugin::DEF_MONITOR_START_MIN)));
 
-        $settings->add(new admin_setting_configtime(enrol_shebang_plugin::PLUGIN_NAME . '/monitor_stop_hour',  enrol_shebang_plugin::PLUGIN_NAME . '/monitor_stop_min',  get_string('LBL_MONITOR_STOP',  enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_MONITOR_STOP',  enrol_shebang_plugin::PLUGIN_NAME), array('h' => enrol_shebang_plugin::DEF_MONITOR_STOP_HOUR, 'm' => enrol_shebang_plugin::DEF_MONITOR_STOP_MIN)));
+        $settings->add(new admin_setting_configtime(enrol_shebang_plugin::PLUGIN_NAME . '/monitor_stop_hour',  'monitor_stop_min',  get_string('LBL_MONITOR_STOP',  enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_MONITOR_STOP',  enrol_shebang_plugin::PLUGIN_NAME), array('h' => enrol_shebang_plugin::DEF_MONITOR_STOP_HOUR, 'm' => enrol_shebang_plugin::DEF_MONITOR_STOP_MIN)));
 
         $settings->add(new admin_setting_configselect(enrol_shebang_plugin::PLUGIN_NAME . '/monitor_threshold', get_string('LBL_MONITOR_THRESHOLD', enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_MONITOR_THRESHOLD', enrol_shebang_plugin::PLUGIN_NAME), enrol_shebang_plugin::DEF_MONITOR_THRESHOLD,
             array('15' => '15', '30' => '30', '45' => '45', '60' => '60', '120' => '120', '180' => '180', '240' => '240')));
@@ -252,7 +251,7 @@
 
         $categoryArray = array(); $parentArray = array();
         make_categories_list($categoryArray, $parentArray);
-        $settings->add(new admin_setting_configselect(enrol_shebang_plugin::PLUGIN_NAME . '/course_category_id', get_string('LBL_COURSE_CATEGORY_ID', enrol_shebang_plugin::PLUGIN_NAME), '', '', $categoryArray));
+        $settings->add(new admin_setting_configselect(enrol_shebang_plugin::PLUGIN_NAME . '/course_category_id', get_string('LBL_COURSE_CATEGORY_ID', enrol_shebang_plugin::PLUGIN_NAME), '', '1', $categoryArray));
 
         $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/course_sections_equal_weeks', get_string('LBL_COURSE_SECTIONS_EQUAL_WEEKS', enrol_shebang_plugin::PLUGIN_NAME), '', '1'));
 
