@@ -409,7 +409,7 @@
             $this->pluginDir        = $this->moodleConfigs->dirroot . self::PLUGIN_PATH . "/";
             $this->pluginUrl        = $this->moodleConfigs->wwwroot . self::PLUGIN_PATH . "/";
 
-            $this->logging_dirpath  = empty($this->config->logging_dirpath)
+            $this->logging_dirpath  = empty($this->config->logging_dirpath) || !is_writable($this->config->logging_dirpath)
                                     ? $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME
                                     : $this->config->logging_dirpath;
             $log_date_suffix        = date(self::DATEFMT_LOG_FILEX);
