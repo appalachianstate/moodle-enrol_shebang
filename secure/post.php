@@ -76,7 +76,9 @@
         die(get_string('ERR_MSG_NOHEADERS', enrol_shebang_plugin::PLUGIN_NAME));
     }
 
-    $enrolment_plugin->import_lmb_message(file_get_contents('php://input'), "{$ldisp_id}:{$jms_id}");
+    if (!$enrolment_plugin->import_lmb_message(file_get_contents('php://input'), "{$ldisp_id}:{$jms_id}")) {
+        header("HTTP/1.0 500 Internal Server Error");
+    }
 
     exit; /* End of page processing
     -------------------------------------------------------------------------------- */

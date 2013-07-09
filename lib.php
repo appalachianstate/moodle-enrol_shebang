@@ -389,13 +389,6 @@
 
 
 
-            // Regardless of PHP version certain modules and classes have
-            // to be present
-            if (!function_exists('xml_parser_create') || !class_exists('DOMDocument') || !class_exists('DOMXPath')) {
-                die (get_string('ERR_XMLLIBS_NOTFOUND', self::PLUGIN_NAME));
-            }
-
-
             // Make a reference to the global configs
             $this->moodleConfigs    = $CFG;
             // Make a reference to the global database connection
@@ -408,48 +401,6 @@
             // Set up some helpers
             $this->pluginDir        = $this->moodleConfigs->dirroot . self::PLUGIN_PATH . "/";
             $this->pluginUrl        = $this->moodleConfigs->wwwroot . self::PLUGIN_PATH . "/";
-
-            $this->logging_dirpath  = empty($this->config->logging_dirpath) || !is_writable($this->config->logging_dirpath)
-                                    ? $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME
-                                    : $this->config->logging_dirpath;
-            $log_date_suffix        = date(self::DATEFMT_LOG_FILEX);
-
-            $this->messageLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
-            $this->processLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
-
-
-            $roles_array = get_all_roles();
-            foreach ($roles_array as $role) {
-                $this->roleCache[$role->id] = $role;
-            }
-            unset($roles_array);
-
-
-            // Need to know some global configs in case of new Moodle recs
-            // being inserted
-            if (!isset($this->moodleConfigs->mnet_localhost_id)) {
-                include_once("{$this->moodleConfigs->dirroot}/mnet/lib.php");
-                $env = new mnet_environment();
-                $env->init(); unset($env);
-            }
-
-
-            // Verify certain dirs are in place
-            if (   !is_dir("{$this->moodleConfigs->dataroot}/" . self::PLUGIN_NAME)
-                && !mkdir("{$this->moodleConfigs->dataroot}/" . self::PLUGIN_NAME, self::MKDIR_MODE, true)) {
-                error_log(get_string('ERR_DATADIR_CREATE', self::PLUGIN_NAME));
-                die;
-            }
-            // Touch the message log before we need it, so we can die if no joy
-            if (!file_exists($this->messageLogPath) && !touch($this->messageLogPath)) {
-                error_log(get_string('ERR_MESGLOG_NOOPEN', self::PLUGIN_NAME));
-                die;
-            }
-            // Touch the process log before we need it, so we can die if no joy
-            if (!file_exists($this->processLogPath) && !touch($this->processLogPath)) {
-                error_log(get_string('ERR_PROCLOG_NOOPEN', self::PLUGIN_NAME));
-                die;
-            }
 
         } // __construct
 
@@ -553,6 +504,13 @@
                 return;
             }
 
+            // Set up process and message log files
+            try { $this->prepare_logfiles(); }
+            catch (moodle_exception $exc) {
+                mtrace($exc->getMessage());
+                return;
+            }
+
             // Monitor message activity
             $this->cron_monitor_activity();
 
@@ -563,6 +521,49 @@
             mtrace(get_string('INF_CRON_FINISH', self::PLUGIN_NAME));
 
         } // cron
+
+
+
+        /**
+         * Make sure process and message log files are present and writable
+         *
+         * @access private
+         * @return void
+         */
+        private function prepare_logfiles()
+        {
+
+            // If no alternate dir specified, use the default
+            if (empty($this->config->logging_dirpath)) {
+                $this->logging_dirpath = $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME;
+            } else {
+                // An alternate location is specified
+                $this->logging_dirpath = preg_replace('/\/+$/', '', trim($this->config->logging_dirpath));
+            }
+
+            $log_date_suffix        = date(self::DATEFMT_LOG_FILEX);
+            $this->messageLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
+            $this->processLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
+
+
+            // Verify certain dirs are in place
+            if (   !is_dir($this->logging_dirpath)
+                && !mkdir($this->logging_dirpath, self::MKDIR_MODE, true)) {
+                error_log(get_string('ERR_DATADIR_CREATE', self::PLUGIN_NAME));
+                throw new moodle_exception('ERR_DATADIR_CREATE', self::PLUGIN_NAME);
+            }
+            // Touch the message log before we need it, so we can die if no joy
+            if (!file_exists($this->messageLogPath) && !touch($this->messageLogPath)) {
+                error_log(get_string('ERR_MESGLOG_NOOPEN', self::PLUGIN_NAME));
+                throw new moodle_exception('ERR_MESGLOG_NOOPEN', self::PLUGIN_NAME);
+            }
+            // Touch the process log before we need it, so we can die if no joy
+            if (!file_exists($this->processLogPath) && !touch($this->processLogPath)) {
+                error_log(get_string('ERR_PROCLOG_NOOPEN', self::PLUGIN_NAME));
+                throw new moodle_exception('ERR_PROCLOG_NOOPEN', self::PLUGIN_NAME);
+            }
+
+        } // prepare_logfiles
 
 
 
@@ -709,9 +710,39 @@
 
 
 
+            // Regardless of PHP version certain modules and classes have
+            // to be present
+            if (!function_exists('xml_parser_create') || !class_exists('DOMDocument') || !class_exists('DOMXPath')) {
+                error_log(get_string('ERR_XMLLIBS_NOTFOUND', self::PLUGIN_NAME));
+                throw new moodle_exception('ERR_XMLLIBS_NOTFOUND', self::PLUGIN_NAME);
+            }
+
             if (!$this->config) {
                 // No configs found
-                die (get_string('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME));
+                error_log(get_string('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME));
+                throw new moodle_exception('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME);
+            }
+
+            // Set up process and message log files
+            try { $this->prepare_logfiles(); }
+            catch (moodle_exception $exc) {
+                $exc->link = $this->pluginUrl . '/tools.php?task=import';
+                throw $exc;
+            }
+
+            // Fetch the roles and keep them for the duration
+            $roles_array = get_all_roles();
+            foreach ($roles_array as $role) {
+                $this->roleCache[$role->id] = $role;
+            }
+            unset($roles_array);
+
+            // Need to know some global configs in case of new Moodle recs
+            // being inserted
+            if (!isset($this->moodleConfigs->mnet_localhost_id)) {
+                include_once("{$this->moodleConfigs->dirroot}/mnet/lib.php");
+                $env = new mnet_environment();
+                $env->init(); unset($env);
             }
 
             set_time_limit(0);
@@ -798,9 +829,38 @@
         public function import_lmb_message($data = '', $msg_id = '')
         {
 
+            // Regardless of PHP version certain modules and classes have
+            // to be present
+            if (!function_exists('xml_parser_create') || !class_exists('DOMDocument') || !class_exists('DOMXPath')) {
+                error_log(get_string('ERR_XMLLIBS_NOTFOUND', self::PLUGIN_NAME));
+                return false;
+            }
+
             if (!$this->config) {
                 // No configs found
-                die (get_string('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME));
+                error_log(get_string('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME));
+                return false;
+            }
+
+            // Set up process and message log files
+            try { $this->prepare_logfiles(); }
+            catch (moodle_exception $exc) {
+                return false;
+            }
+
+            // Fetch the roles and keep them for the duration
+            $roles_array = get_all_roles();
+            foreach ($roles_array as $role) {
+                $this->roleCache[$role->id] = $role;
+            }
+            unset($roles_array);
+
+            // Need to know some global configs in case of new Moodle recs
+            // being inserted
+            if (!isset($this->moodleConfigs->mnet_localhost_id)) {
+                include_once("{$this->moodleConfigs->dirroot}/mnet/lib.php");
+                $env = new mnet_environment();
+                $env->init(); unset($env);
             }
 
             // No payload, no joy
