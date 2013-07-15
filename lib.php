@@ -291,6 +291,9 @@
          * @static
          */
         private static $configDefaults = array(
+
+            'responses_200_on_error'         => array('type' => 'checkbox', 'default' => '0'),
+
             'logging_onlyerrors'             => array('type' => 'checkbox', 'default' => '0'),
             'logging_logxml'                 => array('type' => 'checkbox', 'default' => '1'),
             'logging_nologlock'              => array('type' => 'checkbox', 'default' => '0'),
@@ -901,7 +904,7 @@
                 $this->log_lmb_message($msg_id, null, false, $this->lastRetCode);
                 xml_parser_free($xml_parser);
 
-                return true;
+                return $this->lastRetCode;
             }
             catch (Exception $exc)
             {

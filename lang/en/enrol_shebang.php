@@ -34,6 +34,10 @@ $string['LBL_VERSION']                      = 'SHEBanG Enrollment Plugin Version
 $string['LBL_DISCLAIMER']                   = 'License & Disclaimer';
 
 
+$string['LBL_RESPONSES']                     = 'Server Responses';
+$string['LBL_RESPONSES_200_ON_ERROR']        = 'Send HTTP 200 on error';
+
+
 $string['LBL_LOGGING']                      = 'Logging';
 $string['LBL_LOGGING_ONLYERRORS']           = 'Write only errors';
 $string['LBL_LOGGING_LOGXML']               = 'Write message XML';
@@ -214,6 +218,7 @@ $string['HELP_MONITOR_START']               = 'Time of day when activity monitor
 $string['HELP_MONITOR_STOP']                = 'Time of day when activity monitoring should stop.';
 $string['HELP_MONITOR_THRESHOLD']           = 'Number of minutes after which there has been no activity an alert e-mail should be sent.';
 $string['HELP_MONITOR_EMAILS']              = 'List of e-mail addresses, separated by commas or semi-colons, to which to send activity alerts.';
+$string['HELP_RESPONSES_200_ON_ERROR']      = 'Even when message processing fails respond with an HTTP 200 status code to prevent Luminis message broker from suspending transmission.';
 
 $string['LBL_DISCLAIMER_help']              = '<h4 style="width: 100%; text-align: center;">SHEBanG Enrollment Plugin</h4><p style="width: 100%; text-align: center;">Copyright &copy; 2010 Appalachian State University, Boone, NC</p><p style="text-align: justify">Distributed under the terms of the GNU General Public License version 3. This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.<br /><br />This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.<br /><br />You should have received a copy of the GNU General Public License along with this program. If not, see <a href="http://www.gnu.org/licenses/">www.gnu.org/licenses/</a>.</p>';
 $string['LBL_LOGGING_help']                 = '<p>These settings affect message and process logging.</p><ul><li>Write only errors - when checked, processing log entries will be made only when an error occurs.</li><li>Write message XML - when checked, each message received from the LMB will logged to a file in the enrol_shebang sub-directory of the moodledata directory.</li><li>Suspend Locking - no serialization. The message log file will not be locked exclusively as each LMB message import worker process handles its POST.</li><li>Log Directory Path - alternate directory in which to put process and message log files.</li></ul>';

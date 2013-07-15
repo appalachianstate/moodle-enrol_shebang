@@ -34,6 +34,8 @@
     /**
      * Index (in order of appearance) of config values
      *
+     * responses_200_on_error
+     *
      * logging_onlyerrors
      * logging_logxml
      * logging_nologlock
@@ -113,6 +115,14 @@
         $argball->c = get_string('LBL_VERSION', enrol_shebang_plugin::PLUGIN_NAME, $plugin->release);
 
         $settings->add(new admin_setting_heading(enrol_shebang_plugin::PLUGIN_NAME . '_description', '', get_string('description', enrol_shebang_plugin::PLUGIN_NAME, $argball)));
+
+        /*
+         * Server Responses
+         */
+        $settings->add(new admin_setting_heading(enrol_shebang_plugin::PLUGIN_NAME . '_responses', get_string('LBL_RESPONSES', enrol_shebang_plugin::PLUGIN_NAME), ''));
+
+        $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/responses_200_on_error', get_string('LBL_RESPONSES_200_ON_ERROR', enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_RESPONSES_200_ON_ERROR', enrol_shebang_plugin::PLUGIN_NAME), '0'));
+
 
         /*
          * Logging
