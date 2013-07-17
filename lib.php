@@ -293,6 +293,8 @@
         private static $configDefaults = array(
 
             'responses_200_on_error'         => array('type' => 'checkbox', 'default' => '0'),
+            'responses_notify_on_error'      => array('type' => 'checkbox', 'default' => '0'),
+            'responses_emails'               => array('type' => 'text',     'default' => ''),
 
             'logging_onlyerrors'             => array('type' => 'checkbox', 'default' => '0'),
             'logging_logxml'                 => array('type' => 'checkbox', 'default' => '1'),
@@ -904,6 +906,10 @@
                 $this->log_lmb_message($msg_id, null, false, $this->lastRetCode);
                 xml_parser_free($xml_parser);
 
+                if (!$this->lastRetCode) {
+                    $this->notify_message_error($msg_id);
+                }
+
                 return $this->lastRetCode;
             }
             catch (Exception $exc)
@@ -915,6 +921,7 @@
                 if ($xml_parser != null) {
                     xml_parser_free($xml_parser);
                 }
+                $this->notify_message_error($msg_id);
                 return false;
             }
 
@@ -2797,10 +2804,14 @@
             }
 
             // Send a notice
-            $email_address_array = explode(',', $this->config->monitor_emails);
             $user = new stdClass();
             $user->mailformat = 0;
+
+            $email_address_array = preg_split('/[,;]/', $this->config->monitor_emails);
             foreach ($email_address_array as $email_address) {
+                $email_address = trim($email_address);
+                if (empty($email_address) || !validate_email($email_address))
+                    continue;
                 $user->firstname = "SHEBanG Monitor";
                 $user->lastname  = "Recipient:{$email_address}";
                 $user->email     = trim($email_address);
@@ -2816,5 +2827,73 @@
         } // cron_monitor_activity
 
 
-    } // class
 
+        /**
+         * Sends e-mail notification that message processing error has occurred
+         *
+         * @access  private
+         * @param   string    $msg_id    The message identifier
+         * @return  void
+         * @uses    $SITE
+         */
+        private function notify_message_error($msg_id)
+        {
+            global $SITE;
+
+
+
+            if (empty($this->config->responses_notify_on_error))
+                return;
+
+            // Was the last notification less than the fixed interval. Check
+            // by fetch config record directly from DB, avoid config caching
+            // and if problem with DB connection, then it will puke before
+            // sending emails.
+            $config_rec = null;
+            if (false === ($config_rec = $this->moodleDB->get_record('config_plugins', array('plugin' => self::PLUGIN_NAME, 'name' => 'responses_notify_last')))) {
+                $config_rec         = new stdClass();
+                $config_rec->plugin = self::PLUGIN_NAME;
+                $config_rec->name   = 'responses_notify_last';
+                $config_rec->value  = '0';
+            }
+
+            $timestamp_array = getdate();
+            if (floor(($timestamp_array[0] - intval($config_rec->value)) / 60) < self::MONITOR_NOTICES_INTERVAL) {
+                return;
+            }
+
+            // Update time last notice was sent
+            $config_rec->value = $timestamp_array[0];
+            try {
+
+                if (empty($config_rec->id)) {
+                    $this->moodleDB->insert_record('config_plugins', $config_rec, false);
+                } else {
+                    $this->moodleDB->update_record('config_plugins', $config_rec);
+                }
+
+                $user = new stdClass();
+                $user->mailformat = 0;
+
+                $email_address_array = preg_split('/[,;]/', $this->config->responses_emails);
+                foreach ($email_address_array as $email_address) {
+                    $email_address = trim($email_address);
+                    if (empty($email_address) || !validate_email($email_address))
+                        continue;
+                    $user->firstname = "SHEBanG Processing Error";
+                    $user->lastname  = "Recipient:{$email_address}";
+                    $user->email     = trim($email_address);
+                    email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Processing Error", "SHEBanG Processing Error: Failed to process message with Id {$msg_id}.");
+                }
+
+            }
+            catch (Exception $exc) {
+
+                $this->log_process_exception($exc);
+
+            }
+
+        } // notify_message_error
+
+
+    } // class

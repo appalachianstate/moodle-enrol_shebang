@@ -35,6 +35,8 @@
      * Index (in order of appearance) of config values
      *
      * responses_200_on_error
+     * responses_notify_on_error
+     * responses_emails
      *
      * logging_onlyerrors
      * logging_logxml
@@ -116,12 +118,17 @@
 
         $settings->add(new admin_setting_heading(enrol_shebang_plugin::PLUGIN_NAME . '_description', '', get_string('description', enrol_shebang_plugin::PLUGIN_NAME, $argball)));
 
+
         /*
          * Server Responses
          */
         $settings->add(new admin_setting_heading(enrol_shebang_plugin::PLUGIN_NAME . '_responses', get_string('LBL_RESPONSES', enrol_shebang_plugin::PLUGIN_NAME), ''));
 
         $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/responses_200_on_error', get_string('LBL_RESPONSES_200_ON_ERROR', enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_RESPONSES_200_ON_ERROR', enrol_shebang_plugin::PLUGIN_NAME), '0'));
+
+        $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/responses_notify_on_error', get_string('LBL_RESPONSES_NOTIFY_ON_ERROR', enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_RESPONSES_NOTIFY_ON_ERROR', enrol_shebang_plugin::PLUGIN_NAME), '0'));
+
+        $settings->add(new admin_setting_configtext(enrol_shebang_plugin::PLUGIN_NAME . '/responses_emails', get_string('LBL_RESPONSES_EMAILS', enrol_shebang_plugin::PLUGIN_NAME), get_string('HELP_RESPONSES_EMAILS', enrol_shebang_plugin::PLUGIN_NAME), ''));
 
 
         /*
