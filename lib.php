@@ -129,6 +129,7 @@
         const OPT_PERSON_LOCALITY_IFF           = 'iff';
 
         const OPT_AUTH_SHIBBOLETH               = 'shibboleth';
+        const OPT_AUTH_SHIBBUNCIF               = 'shibbuncif';
         const OPT_AUTH_MANUAL                   = 'manual';
         const OPT_AUTH_NOLOGIN                  = 'nologin';
 
@@ -1606,7 +1607,7 @@
             }
             // If Shibboleth username domain is specified, append
             // it to the username so we keep universal uniqueness
-            if ($this->config->person_auth_method == self::OPT_AUTH_SHIBBOLETH) {
+            if ($this->config->person_auth_method == self::OPT_AUTH_SHIBBOLETH || $this->config->person_auth_method == self::OPT_AUTH_SHIBBUNCIF) {
                 $userdomain = trim($this->config->person_shib_domain);
                 if ($userdomain && substr($userdomain, 0, 1) != '@') {
                     $userdomain = '@' . $userdomain;
@@ -1653,7 +1654,9 @@
                         return true;
                     }
                 } else {
-                    // Found a user rec so update it with message info
+                    // Found a user rec so update it with message info. Username may
+                    // have changed so pass that on in the $user_rec
+                    $user_rec->username = $username;
                     $update_result = $this->update_user($user_rec, $lmb_data, $xpath);
                 }
 
