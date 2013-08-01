@@ -266,8 +266,7 @@
             enrol_shebang_plugin::OPT_COURSE_CATEGORY_PICK => get_string('LBL_COURSE_CATEGORY_PICK', enrol_shebang_plugin::PLUGIN_NAME)
           )));
 
-        $categoryArray = array(); $parentArray = array();
-        make_categories_list($categoryArray, $parentArray);
+        $categoryArray = coursecat::make_categories_list();
         $settings->add(new admin_setting_configselect(enrol_shebang_plugin::PLUGIN_NAME . '/course_category_id', get_string('LBL_COURSE_CATEGORY_ID', enrol_shebang_plugin::PLUGIN_NAME), '', '1', $categoryArray));
 
         $settings->add(new admin_setting_configcheckbox(enrol_shebang_plugin::PLUGIN_NAME . '/course_sections_equal_weeks', get_string('LBL_COURSE_SECTIONS_EQUAL_WEEKS', enrol_shebang_plugin::PLUGIN_NAME), '', '1'));
