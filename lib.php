@@ -2410,8 +2410,6 @@
             $course_rec->groupmodeforce     = $course_configs->groupmodeforce;
             $course_rec->lang               = $course_configs->lang;
             $course_rec->enablecompletion   = $course_configs->enablecompletion;
-            $course_rec->completionstartonenrol
-                                            = $course_configs->completionstartonenrol;
 
             $course_rec->fullname           =
             $course_rec->shortname          =
@@ -2535,7 +2533,7 @@
                     return 0;
                 }
 
-                $category->context = context_coursecat::instance($new_category->id);
+                $category->context = context_coursecat::instance($category->id);
                 $category->context->mark_dirty();
                 fix_course_sortorder();
 
@@ -2556,13 +2554,14 @@
          * @param  stdClass    $data    Data needed for an entry in the 'course' table
          * @return stdClass             New course instance
          */
-        private function create_course(stdClass $data) {
+        private function create_course(stdClass $data)
+        {
 
             // Normally an application-level RI check for category
             // is done, but that is handled by the calling routine
             //$category = $DB->get_record('course_categories', array('id'=>$data->category), '*', MUST_EXIST);
 
-            // Then an application-level check for shotname
+            // Then an application-level check for shortname
             if (!empty($data->shortname)) {
                 if ($this->moodleDB->record_exists('course', array('shortname' => $data->shortname))) {
                     throw new moodle_exception('shortnametaken');
@@ -2572,7 +2571,7 @@
             // Then an application-level check for idnumber uniqueness,
             // but the calling routine has done this already
             //if (!empty($data->idnumber)) {
-            //    if ($this->moodleDB->record_exists('course', array('idnumber' => $data->idnumber))) {
+            //    if ($DB->record_exists('course', array('idnumber' => $data->idnumber))) {
             //        throw new moodle_exception('idnumbertaken');
             //    }
             //}
@@ -2598,7 +2597,7 @@
             //$data->visibleold = $data->visible;
 
             $newcourseid = $this->moodleDB->insert_record('course', $data);
-            $context = get_context_instance(CONTEXT_COURSE, $newcourseid, MUST_EXIST);
+            $context = context_course::instance($newcourseid, MUST_EXIST);
 
             // Still, no editoroptions to consider here
             //if ($editoroptions) {
