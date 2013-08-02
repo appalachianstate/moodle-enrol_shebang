@@ -31,6 +31,11 @@
         die;
     }
 
+    // Disable moodle specific debug messages and any errors in output
+    define('NO_DEBUG_DISPLAY', true);
+    // No cookies expected
+    define('NO_MOODLE_COOKIES', true);
+
     // Point of entry for the LMB posted message, so gotta get Moodle going.
     // Expect that this file is in enrol/shebang/secure (three dirs down from
     // the Moodle rootdir).

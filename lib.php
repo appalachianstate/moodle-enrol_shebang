@@ -797,6 +797,7 @@
                 if ($this->courseInserted) {
                     $this->courseInserted = false;
                     fix_course_sortorder();
+                    cache_helper::purge_by_event('changesincourse');
                 }
 
                 // Clean up before leaving
@@ -2410,8 +2411,6 @@
             $course_rec->groupmodeforce     = $course_configs->groupmodeforce;
             $course_rec->lang               = $course_configs->lang;
             $course_rec->enablecompletion   = $course_configs->enablecompletion;
-            $course_rec->completionstartonenrol
-                                            = $course_configs->completionstartonenrol;
 
             $course_rec->fullname           =
             $course_rec->shortname          =
@@ -2535,7 +2534,7 @@
                     return 0;
                 }
 
-                $category->context = context_coursecat::instance($new_category->id);
+                $category->context = context_coursecat::instance($category->id);
                 $category->context->mark_dirty();
                 fix_course_sortorder();
 
@@ -2556,13 +2555,14 @@
          * @param  stdClass    $data    Data needed for an entry in the 'course' table
          * @return stdClass             New course instance
          */
-        private function create_course(stdClass $data) {
+        private function create_course(stdClass $data)
+        {
 
             // Normally an application-level RI check for category
             // is done, but that is handled by the calling routine
             //$category = $DB->get_record('course_categories', array('id'=>$data->category), '*', MUST_EXIST);
 
-            // Then an application-level check for shotname
+            // Then an application-level check for shortname
             if (!empty($data->shortname)) {
                 if ($this->moodleDB->record_exists('course', array('shortname' => $data->shortname))) {
                     throw new moodle_exception('shortnametaken');
@@ -2572,7 +2572,7 @@
             // Then an application-level check for idnumber uniqueness,
             // but the calling routine has done this already
             //if (!empty($data->idnumber)) {
-            //    if ($this->moodleDB->record_exists('course', array('idnumber' => $data->idnumber))) {
+            //    if ($DB->record_exists('course', array('idnumber' => $data->idnumber))) {
             //        throw new moodle_exception('idnumbertaken');
             //    }
             //}
@@ -2598,7 +2598,7 @@
             //$data->visibleold = $data->visible;
 
             $newcourseid = $this->moodleDB->insert_record('course', $data);
-            $context = get_context_instance(CONTEXT_COURSE, $newcourseid, MUST_EXIST);
+            $context = context_course::instance($newcourseid, MUST_EXIST);
 
             // Still, no editoroptions to consider here
             //if ($editoroptions) {
@@ -2607,23 +2607,27 @@
             //    $DB->set_field('course', 'summary', $data->summary, array('id'=>$newcourseid));
             //    $DB->set_field('course', 'summaryformat', $data->summary_format, array('id'=>$newcourseid));
             //}
+            //if ($overviewfilesoptions = course_overviewfiles_options($newcourseid)) {
+            //    // Save the course overviewfiles
+            //    $data = file_postupdate_standard_filemanager($data, 'overviewfiles', $overviewfilesoptions, $context, 'course', 'overviewfiles', 0);
+            //}
 
-            // Could just use the $data object, but we'd miss
-            // any column defaults set in the database
-            $course = $this->moodleDB->get_record('course', array('id'=>$newcourseid));
+            // update course format options
+            course_get_format($newcourseid)->update_course_format_options($data);
+
+            $course = course_get_format($newcourseid)->get_course();
 
             // Setup the blocks
             blocks_add_default_course_blocks($course);
 
-            $section = new stdClass();
-            $section->course        = $course->id;   // Create a default section.
-            $section->section       = 0;
-            $section->summaryformat = FORMAT_HTML;
-            $this->moodleDB->insert_record('course_sections', $section);
+            // Create a default section.
+            course_create_sections_if_missing($course, 0);
 
             // To expensive to do in a batch import,
             // defer until last course is processed
             //fix_course_sortorder();
+            // purge appropriate caches in case fix_course_sortorder() did not change anything
+            //cache_helper::purge_by_event('changesincourse');
 
             // new context created - better mark it as dirty
             mark_context_dirty($context->path);
