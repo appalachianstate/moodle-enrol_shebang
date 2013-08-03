@@ -1938,7 +1938,16 @@
                     // the user's enrolments done with this
                     // plugin, and remove them using a call
                     // to unenrol_user().
-                    $this->user_delete($user_rec);
+                    try
+                    {
+                        $this->user_delete($user_rec);
+                        $rc = true;
+                    }
+                    catch (Exception $exc)
+                    {
+                        $this->log_process_exception($exc);
+                        $rc = false;
+                    }
                     break;
                 default:
                     // Ignore the message
