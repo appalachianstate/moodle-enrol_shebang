@@ -903,6 +903,10 @@
                 if ($this->courseInserted) {
                     $this->courseInserted = false;
                     fix_course_sortorder();
+                    // The call to cache_helper::purge_by_event() is called after a call
+                    // to fix_course_sortorder(), but this would risk the cache getting
+                    // purged too frequently as messages are sent, so will leave commented
+                    //cache_helper::purge_by_event('changesincourse');
                 }
 
                 $this->log_lmb_message($msg_id, null, false, $this->lastRetCode);
