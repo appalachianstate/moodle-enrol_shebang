@@ -2345,7 +2345,7 @@
                    . "  FROM {" . self::MOODLENT_USER . "} u "
                    . " INNER JOIN {" . self::SHEBANGENT_PERSON . "} p "
                    . "    ON p.userid_moodle = u.id "
-                   . " WHERE p.source_id = :source_id";
+                   . " WHERE p.source_id = :source_id AND u.deleted = 0";
             $parms = array('source_id' => $person_source_id);
 
             if (false === ($user_rec = $this->moodleDB->get_record_sql($query, $parms))) {
@@ -2366,6 +2366,12 @@
                     $this->enrol_user($enrol_instance, $user_rec->id, $role_id);
                     if (!empty($group_id) && !empty($this->config->crosslist_groups)) {
                         groups_add_member($group_id, $user_rec->id);
+                    }
+                    // Borrow the manual enrollment plugin's mojo, until Moodle 2.5
+                    // when this will be handled by the enrol_plugin parent class
+                    if (!empty($this->moodleConfigs->recovergrades)) {
+                        require_once("{$this->moodleConfigs->libdir}/gradelib.php");
+                        grade_recover_history_grades($user_rec->id, $enrol_instance->courseid);
                     }
                 }
                 $rc = true;
