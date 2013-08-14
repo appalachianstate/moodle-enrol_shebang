@@ -2350,7 +2350,7 @@
                    . "  FROM {" . self::MOODLENT_USER . "} u "
                    . " INNER JOIN {" . self::SHEBANGENT_PERSON . "} p "
                    . "    ON p.userid_moodle = u.id "
-                   . " WHERE p.source_id = :source_id";
+                   . " WHERE p.source_id = :source_id AND u.deleted = 0";
             $parms = array('source_id' => $person_source_id);
 
             if (false === ($user_rec = $this->moodleDB->get_record_sql($query, $parms))) {
