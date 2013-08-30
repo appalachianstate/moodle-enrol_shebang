@@ -454,6 +454,57 @@
 
 
         /**
+         * Override parent
+         * @see enrol_plugin::get_user_enrolment_actions()
+         */
+        public function get_user_enrolment_actions(course_enrolment_manager $manager, $ue)
+        {
+
+            $actions = array();
+
+            // Check for bailout, simplify it recognizing this plugin allows
+            // manual unenrol given the capability is granted
+            if (!has_capability("enrol/shebang:unenrol", $manager->get_context())) {
+                return $actions;
+            }
+
+            // Set the user enrol id amongst the page's
+            // URL query string params
+            $params = $manager->get_moodlepage()->url->params();
+            $params['ue'] = $ue->id;
+            $url = new moodle_url('/enrol/unenroluser.php', $params);
+
+            $actions[] = new user_enrolment_action(new pix_icon('t/delete', ''), get_string('unenrol', 'enrol'), $url, array('class' => 'unenrollink'));
+
+            return $actions;
+
+        }
+
+
+
+        /**
+         * Override parent
+         * @see enrol_plugin::get_newinstance_link()
+         */
+        public function get_newinstance_link($courseid)
+        {
+
+            // Only one enrol instance per course
+            if ($this->moodleDB->record_exists('enrol', array('courseid' => $courseid, 'enrol' => 'shebang'))) {
+                return null;
+            }
+
+            if (!has_capability('moodle/course:enrolconfig', context_course::instance($courseid))) {
+                return null;
+            }
+
+            return new moodle_url(self::PLUGIN_PATH . '/add.php', array('id' => $courseid));
+
+        }
+
+
+
+        /**
          * Accessor for security config - username
          *
          * @access public
