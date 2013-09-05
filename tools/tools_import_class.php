@@ -83,7 +83,7 @@
 
             $system_context = context_system::instance();
 
-            $admin_url  = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . "/admin/settings.php", array('section' => 'enrolsettingsshebang'));
+            $admin_url  = new moodle_url("{$CFG->wwwroot}/admin/settings.php", array('section' => 'enrolsettingsshebang'));
             $index_url  = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php');
             $import_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php', array('task' => 'import'));
 
@@ -161,7 +161,7 @@
                             } else {
 
                                 // File not found
-                                echo $OUTPUT->box(get_string(INF_TOOLS_IMPORT_FILENOTFOUND, enrol_shebang_plugin::PLUGIN_NAME));
+                                echo $OUTPUT->box(get_string('INF_TOOLS_IMPORT_FILENOTFOUND', enrol_shebang_plugin::PLUGIN_NAME));
                                 echo $OUTPUT->continue_button($index_url);
 
                             }
@@ -246,4 +246,3 @@
 
 
     } // class
-

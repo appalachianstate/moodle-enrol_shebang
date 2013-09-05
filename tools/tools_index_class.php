@@ -72,7 +72,7 @@
 
             // POST or GET, just display the index (list) interface
 
-            $admin_url  = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . "/admin/settings.php", array('section' => 'enrolsettingsshebang'));
+            $admin_url  = new moodle_url("{$CFG->wwwroot}/admin/settings.php", array('section' => 'enrolsettingsshebang'));
             $index_url  = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php');
 
             $PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
@@ -118,5 +118,3 @@
 
 
     } // class
-
-

@@ -66,6 +66,7 @@
             $idnumber = trim($data['idnumber']);
             if (empty($idnumber)) {
                 $errors['idnumber'] = get_string('missingfield', 'error', 'idnumber');
+                return $errors;
             }
 
             // Check if idnumber is used elsewhere
