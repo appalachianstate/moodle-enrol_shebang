@@ -40,18 +40,15 @@
     // Expect that this file is in enrol/shebang/secure (three dirs down from
     // the Moodle rootdir).
     require_once (dirname(__FILE__) . '/../../../config.php');
-    // We may end up creating a course group
-    require_once($CFG->dirroot . '/group/lib.php');
     // And we want our enrollment module too
-    require_once (dirname(__FILE__) . '/../lib.php');
-
+    require_once (dirname(__FILE__) . '/../locallib.php');
 
     if (!defined('SHEBANG_SECURE_REALM')) define ('SHEBANG_SECURE_REALM', 'SHEBanG Authentication');
     if (!defined('SHEBANG_HEADER_MSGID')) define ('SHEBANG_HEADER_MSGID', 'HTTP_JMSMESSAGEID');
     if (!defined('SHEBANG_HEADER_LDISP')) define ('SHEBANG_HEADER_LDISP', 'HTTP_LDISP_ID');
 
 
-    $enrolment_plugin = new enrol_shebang_plugin();
+    $processor = new enrol_shebang_processor();
 
 
     // First check if this plugin is enabled
@@ -61,9 +58,9 @@
     }
 
     // If enabled, then check for application-level security
-    if (!check_security($enrolment_plugin->getSecureUsername(),
-                        $enrolment_plugin->getSecurePassword(),
-                        $enrolment_plugin->getSecureMethod() == enrol_shebang_plugin::OPT_SECURE_METHOD_BASIC)) {
+    if (!check_security($processor->getSecureUsername(),
+                        $processor->getSecurePassword(),
+                        $processor->getSecureMethod() == enrol_shebang_processor::OPT_SECURE_METHOD_BASIC)) {
         die;
     }
 
@@ -78,11 +75,11 @@
 
     if (!$ldisp_id || !$jms_id) {
         header("HTTP/1.0 400 Bad Request");
-        die(get_string('ERR_MSG_NOHEADERS', enrol_shebang_plugin::PLUGIN_NAME));
+        die(get_string('ERR_MSG_NOHEADERS', enrol_shebang_processor::PLUGIN_NAME));
     }
 
-    if (   !$enrolment_plugin->import_lmb_message(file_get_contents('php://input'), "{$ldisp_id}:{$jms_id}")
-        && !$enrolment_plugin->get_config('responses_200_on_error', '0')) {
+    if (   !$processor->import_lmb_message(file_get_contents('php://input'), "{$ldisp_id}:{$jms_id}")
+        && !$processor->get_config('responses_200_on_error', '0')) {
 
         header("HTTP/1.0 500 Internal Server Error");
 
@@ -205,4 +202,3 @@
         return ($data['response'] === $valid_response);
 
     } // digest_response_matches
-

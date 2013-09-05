@@ -73,21 +73,21 @@
             // POST or GET, just display the index (list) interface
 
             $admin_url  = new moodle_url("{$CFG->wwwroot}/admin/settings.php", array('section' => 'enrolsettingsshebang'));
-            $index_url  = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php');
+            $index_url  = new moodle_url(enrol_shebang_processor::PLUGIN_PATH . '/tools.php');
 
-            $PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
-            $PAGE->set_title($SITE->fullname . ':' . get_string('LBL_TOOLS_INDEX', enrol_shebang_plugin::PLUGIN_NAME));
+            $PAGE->set_context(context_system::instance());
+            $PAGE->set_title($SITE->fullname . ':' . get_string('LBL_TOOLS_INDEX', enrol_shebang_processor::PLUGIN_NAME));
             $PAGE->set_url($index_url);
             $PAGE->set_pagelayout('admin');
             $PAGE->set_heading($SITE->fullname);
 
-            $PAGE->navbar->add(get_string('LBL_TOOLS_INDEX',  enrol_shebang_plugin::PLUGIN_NAME), null);
+            $PAGE->navbar->add(get_string('LBL_TOOLS_INDEX',  enrol_shebang_processor::PLUGIN_NAME), null);
 
             navigation_node::override_active_url($admin_url);
 
             echo $OUTPUT->header();
 
-            echo $OUTPUT->heading(get_string('LBL_TOOLS_INDEX', enrol_shebang_plugin::PLUGIN_NAME));
+            echo $OUTPUT->heading(get_string('LBL_TOOLS_INDEX', enrol_shebang_processor::PLUGIN_NAME));
 
             $table = new html_table();
             $table->attributes = array('style' => 'width: 100%;');
@@ -104,9 +104,9 @@
 
                 include_once($file_path);
 
-                $tool_class_name = enrol_shebang_plugin::PLUGIN_NAME . "_tools_{$task}";
+                $tool_class_name = enrol_shebang_processor::PLUGIN_NAME . "_tools_{$task}";
                 $tool = new $tool_class_name();
-                $tool_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . "/tools.php", array('task' => $tool->task));
+                $tool_url = new moodle_url(enrol_shebang_processor::PLUGIN_PATH . "/tools.php", array('task' => $tool->task));
                 $table->data[] = array("<a href=\"" . $tool_url->out() . "\">{$tool->name}</a>", $tool->desc);
 
             }

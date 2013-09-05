@@ -191,6 +191,7 @@ $string['ERR_COURSECAT_ZERO']               = 'Could not determine category for 
 $string['ERR_ENROL_INSERT']                 = 'Could not create enrol instance in course';
 $string['ERR_CROSSLISTNOTENABLED']          = 'Cross-listing is not enabled';
 $string['ERR_METANOTENABLED']               = 'Cross-listing is not enabled';
+$string['ERR_SUSPEND_FAIL']                 = 'Failed to suspend user enrollment';
 
 
 /* INFO STRINGS */
