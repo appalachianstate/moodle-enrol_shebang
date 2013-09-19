@@ -51,7 +51,7 @@
         {
             $this->_filelist = get_file_storage()
             ->get_area_files(context_system::instance()->id,
-              enrol_shebang_plugin::PLUGIN_NAME, enrol_shebang_plugin::PLUGIN_FILEAREA, false, 'timecreated');
+              enrol_shebang_processor::PLUGIN_NAME, enrol_shebang_tools_import::PLUGIN_FILEAREA, false, 'timecreated');
         }
 
 
@@ -150,12 +150,12 @@
                     // (POST) with form values.
                     $params = array('task' => 'import', 'action' => 'import',
                                     'itemid' => $file->get_itemid());
-                    $import_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php', $params);
-                    $row[] = html_writer::link($import_url, get_string('LBL_TOOLS_IMPORT_LINK_IMPORT', enrol_shebang_plugin::PLUGIN_NAME));
+                    $import_url = new moodle_url(enrol_shebang_processor::PLUGIN_PATH . '/tools.php', $params);
+                    $row[] = html_writer::link($import_url, get_string('LBL_TOOLS_IMPORT_LINK_IMPORT', enrol_shebang_processor::PLUGIN_NAME));
                     $params = array('task' => 'import', 'action' => 'delete',
                                     'itemid' => $file->get_itemid());
-                    $delete_url = new moodle_url(enrol_shebang_plugin::PLUGIN_PATH . '/tools.php', $params);
-                    $row[] = html_writer::link($delete_url, get_string('LBL_TOOLS_IMPORT_LINK_DELETE', enrol_shebang_plugin::PLUGIN_NAME));
+                    $delete_url = new moodle_url(enrol_shebang_processor::PLUGIN_PATH . '/tools.php', $params);
+                    $row[] = html_writer::link($delete_url, get_string('LBL_TOOLS_IMPORT_LINK_DELETE', enrol_shebang_processor::PLUGIN_NAME));
                 }
 
                 $table->data[] = $row;

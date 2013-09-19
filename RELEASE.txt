@@ -1,6 +1,23 @@
 CHANGE LOG FOR ENROL_SHEBANG MOODLE PLUGIN
 --------------------------------------------------------------------------------
 
+2013080501:0.1.0 - 2013-09-19
+
+Reorganize code to separate message processing from the enrol plugin class, and
+place into locallib.php.
+
+Distinguish between status and recstatus when processing membership messages so
+that a status of 0 will suspend user's enrollment in a class, and a recstatus
+value of 3 (delete) will remove the enrollment. This behavior extends to group
+membership (cross-listed courses).
+
+Fix plugin to support deletion of enrollments by editingteacher, manager roles.
+Also provide for addition of enrol instance to course with prompt for course's
+idnumber. Add hooks for validation of course's idnumber when editing course
+settings.
+
+Fix breadcrumb navbar in admin. tools.
+
 2013080500:0.0.9 - 2013-08-05
 
 CONTRIB-4472 Move all file I/O out of the plugin class' constructor, and remove
