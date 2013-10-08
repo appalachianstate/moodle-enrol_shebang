@@ -1,7 +1,7 @@
 CHANGE LOG FOR ENROL_SHEBANG MOODLE PLUGIN
 --------------------------------------------------------------------------------
 
-2013080501:0.1.0 - 2013-09-19
+2013080501:0.1.0 - 2013-10-08
 
 Reorganize code to separate message processing from the enrol plugin class, and
 place into locallib.php.
