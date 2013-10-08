@@ -29,12 +29,11 @@
 
 
 
-    $course_id = required_param('id', PARAM_INT);
+    $course = $DB->get_record('course', array('id' => required_param('id', PARAM_INT)), '*', MUST_EXIST);
+    require_login($course);
 
-    require_login($course_id);
-    require_capability('moodle/course:enrolconfig', context_course::instance($course_id));
 
-    $manage_page_url     = new moodle_url('/enrol/instances.php', array('id' => $course_id));
+    $manage_page_url     = new moodle_url('/enrol/instances.php', array('id' => $course->id));
     $plugin_short_name   = 'shebang';
     $plugin_name         = 'enrol_shebang';
 
@@ -43,28 +42,32 @@
     }
 
     $plugin = enrol_get_plugin($plugin_short_name);
-    if (null == $plugin->get_newinstance_link($course_id)) {
+    if (null == $plugin->get_newinstance_link($course->id)) {
         // Either failed has_capability() checks or
         // enrol instance already present in course
         redirect($manage_page_url);
     }
 
 
-    $PAGE->set_url('/enrol/{$plugin_short_name}/add.php', array('id' => $course_id));
+    $PAGE->set_url('/enrol/{$plugin_short_name}/add.php', array('id' => $course->id));
     $PAGE->set_pagelayout('admin');
     $PAGE->set_title(get_string('pluginname', $plugin_name));
-    $PAGE->set_heading($COURSE->fullname);
+    $PAGE->set_heading($course->fullname);
     navigation_node::override_active_url($manage_page_url);
 
 
-    // Prompt for (display current) idnumber
-    $mform = new enrol_shebang_add_form(null, array('id' => $course_id, 'idnumber' => $COURSE->idnumber));
+    // Prompt for (or display current) idnumber
+    $edit_idnumber = has_capability('moodle/course:changeidnumber', context_course::instance($course->id));
+    $mform = new enrol_shebang_add_form(null, array('edit_idnumber' => $edit_idnumber));
+    $mform->set_data(array('id' => $course->id, 'idnumber' => $course->idnumber));
 
     if ($mform->is_cancelled()) {
         redirect($manage_page_url);
     } elseif ($data = $mform->get_data()) {
-        $plugin->add_instance($COURSE, null);
-        $DB->update_record('course', array('id' => $course_id, 'idnumber' => $data->idnumber));
+        $plugin->add_instance($course, null);
+        if ($edit_idnumber) {
+            $DB->update_record('course', array('id' => $course->id, 'idnumber' => $data->idnumber));
+        }
         redirect($manage_page_url);
     }
 
