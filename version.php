@@ -36,6 +36,6 @@
 
     $plugin->version    = 2013080501;
     $plugin->requires   = 2011120500;
-    $plugin->release    = "0.1.0-22 (Build 20130919)";
+    $plugin->release    = "0.1.0-22 (Build 20131008)";
     $plugin->cron       = 1;
     $plugin->maturity   = MATURITY_STABLE;

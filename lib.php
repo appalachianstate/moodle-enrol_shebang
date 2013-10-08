@@ -99,13 +99,31 @@
             global $DB;
 
 
+            // Basic capability requirement
+            if (!has_capability('moodle/course:enrolconfig', context_course::instance($courseid))) {
+                return null;
+            }
+
             // Only one enrol instance per course
             if ($DB->record_exists('enrol', array('courseid' => $courseid, 'enrol' => $this->get_name()))) {
                 return null;
             }
 
-            if (!has_capability('moodle/course:enrolconfig', context_course::instance($courseid))) {
-                return null;
+            // Need the course to see if idnumber present
+            // when checking this next capability
+            $course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
+            $edit_idnumber = has_capability('moodle/course:changeidnumber', context_course::instance($courseid));
+
+            if (empty($course->idnumber)) {
+                if (!$edit_idnumber) {
+                    return null;
+                }
+            } else {
+                // Check if idnumber is used elsewhere
+                $others = $DB->record_exists_select('course', 'idnumber = :idnumber AND id != :id', array('idnumber' => $course->idnumber, 'id' => $course->id));
+                if ($others && !$edit_idnumber) {
+                    return null;
+                }
             }
 
             return new moodle_url(self::PLUGIN_PATH . '/add.php', array('id' => $courseid));

@@ -39,7 +39,7 @@
             $mform = $this->_form;
             $mform->addElement('header', 'header', get_string('pluginname', 'enrol_shebang'));
 
-            $mform->addElement('hidden', 'id', $this->_customdata['id']);
+            $mform->addElement('hidden', 'id');
             $mform->setType('id', PARAM_INT);
 
             // idnumber text box
@@ -48,8 +48,10 @@
             $mform->addRule('idnumber', get_string('required'), 'required', null, 'client');
             $mform->addHelpButton('idnumber', 'idnumbercourse');
             $mform->setType('idnumber', PARAM_RAW);
-            $mform->getElement('idnumber')->setValue($this->_customdata['idnumber']);
 
+            if (!$this->_customdata['edit_idnumber']) {
+                $mform->hardFreeze('idnumber');
+            }
             $this->add_action_buttons(true, get_string('addinstance', 'enrol'));
 
         }
@@ -70,7 +72,7 @@
             }
 
             // Check if idnumber is used elsewhere
-            if ($DB->record_exists_select('course', 'idnumber = :idnumber AND id != :id', array('idnumber' => $idnumber, 'id' => $this->_customdata['id']))) {
+            if ($DB->record_exists_select('course', 'idnumber = :idnumber AND id != :id', array('idnumber' => $idnumber, 'id' => $data['id']))) {
                 $errors['idnumber'] = get_string('idnumbertaken', 'error');
             }
 
