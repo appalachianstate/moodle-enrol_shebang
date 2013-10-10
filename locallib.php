@@ -1631,7 +1631,7 @@
             try
             {
                 $user_rec->id = $this->moodleDB->insert_record(self::MOODLENT_USER, $user_rec, true);
-                get_context_instance(CONTEXT_USER, $user_rec->id);
+                context_user::instance($user_rec->id);
                 events_trigger('user_created', $user_rec);
             }
             catch (Exception $exc)
