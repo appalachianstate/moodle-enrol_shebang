@@ -33,7 +33,7 @@
     require_login();
 
     // Must be a site administrator
-    require_capability('moodle/site:config', context_system::instance());
+    require_capability('moodle/site:config', get_context_instance(CONTEXT_SYSTEM));
 
 
     $task = optional_param('task', 'index', PARAM_ALPHA);

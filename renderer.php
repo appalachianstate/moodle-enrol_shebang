@@ -50,7 +50,7 @@
         function __construct()
         {
             $this->_filelist = get_file_storage()
-            ->get_area_files(context_system::instance()->id,
+            ->get_area_files(get_context_instance(CONTEXT_SYSTEM)->id,
               enrol_shebang_processor::PLUGIN_NAME, enrol_shebang_tools_import::PLUGIN_FILEAREA, false, 'timecreated');
         }
 

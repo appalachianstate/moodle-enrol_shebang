@@ -57,7 +57,7 @@
 
 
     // Prompt for (or display current) idnumber
-    $edit_idnumber = has_capability('moodle/course:changeidnumber', context_course::instance($course->id));
+    $edit_idnumber = has_capability('moodle/course:changeidnumber', get_context_instance(CONTEXT_COURSE, $course->id));
     $mform = new enrol_shebang_add_form(null, array('edit_idnumber' => $edit_idnumber));
     $mform->set_data(array('id' => $course->id, 'idnumber' => $course->idnumber));
 

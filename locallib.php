@@ -1626,7 +1626,7 @@
             try
             {
                 $user_rec->id = $this->moodleDB->insert_record(self::MOODLENT_USER, $user_rec, true);
-                context_user::instance($user_rec->id);
+                get_context_instance(CONTEXT_USER, $user_rec->id);
                 events_trigger('user_created', $user_rec);
             }
             catch (Exception $exc)
@@ -2372,8 +2372,8 @@
                     return 0;
                 }
 
-                $category->context = context_coursecat::instance($category->id);
-                $category->context->mark_dirty();
+                $category->context = get_context_instance(CONTEXT_COURSECAT, $category->id);
+                mark_context_dirty($category->context->path);
                 fix_course_sortorder();
 
                 $term_rec->category_id = $category->id;
@@ -2422,8 +2422,8 @@
                     return 0;
                 }
 
-                $category->context = context_coursecat::instance($category->id);
-                $category->context->mark_dirty();
+                $category->context = get_context_instance(CONTEXT_COURSECAT, $category->id);
+                mark_context_dirty($category->context->path);
                 fix_course_sortorder();
 
             }
@@ -2486,7 +2486,7 @@
             //$data->visibleold = $data->visible;
 
             $newcourseid = $this->moodleDB->insert_record('course', $data);
-            $context = context_course::instance($newcourseid, MUST_EXIST);
+            $context = get_context_instance(CONTEXT_COURSE, $newcourseid, MUST_EXIST);
 
             // Still, no editoroptions to consider here
             //if ($editoroptions) {

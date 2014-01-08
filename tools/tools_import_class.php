@@ -85,7 +85,7 @@
 
 
 
-            $system_context = context_system::instance();
+            $system_context = get_context_instance(CONTEXT_SYSTEM);
 
             $admin_url  = new moodle_url("{$CFG->wwwroot}/admin/settings.php", array('section' => 'enrolsettingsshebang'));
             $index_url  = new moodle_url(enrol_shebang_processor::PLUGIN_PATH . '/tools.php');
@@ -195,7 +195,7 @@
                 // POST request, but cancel button clicked. Clear out draft
                 // file area to remove unused uploads, then send user back
                 // to tools index.
-                get_file_storage()->delete_area_files(context_user::instance($USER->id)->id, 'user', 'draft', file_get_submitted_draft_itemid('files_filemanager'));
+                get_file_storage()->delete_area_files(get_context_instance(CONTEXT_USER, $USER->id)->id, 'user', 'draft', file_get_submitted_draft_itemid('files_filemanager'));
                 redirect($index_url);
 
              } elseif(null != ($formdata = $mform->get_data())) {
@@ -208,7 +208,7 @@
                  // File is in the module's upload filearea under the system
                  // context, so tidy up the user's draft area using the same
                  // itemid value
-                 get_file_storage()->delete_area_files(context_user::instance($USER->id)->id, 'user', 'draft', $formdata->files_filemanager);
+                 get_file_storage()->delete_area_files(get_context_instance(CONTEXT_USER, $USER->id)->id, 'user', 'draft', $formdata->files_filemanager);
                  // At this point we should issue a redirect so the user-agent
                  // will GET a new page for two reasons: so the last request
                  // is not a POST in case the user clicks the browser refresh

@@ -75,7 +75,7 @@
             $admin_url  = new moodle_url("{$CFG->wwwroot}/admin/settings.php", array('section' => 'enrolsettingsshebang'));
             $index_url  = new moodle_url(enrol_shebang_processor::PLUGIN_PATH . '/tools.php');
 
-            $PAGE->set_context(context_system::instance());
+            $PAGE->set_context(get_context_instance(CONTEXT_SYSTEM));
             $PAGE->set_title($SITE->fullname . ':' . get_string('LBL_TOOLS_INDEX', enrol_shebang_processor::PLUGIN_NAME));
             $PAGE->set_url($index_url);
             $PAGE->set_pagelayout('admin');

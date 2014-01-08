@@ -100,7 +100,7 @@
 
 
             // Basic capability requirement
-            if (!has_capability('moodle/course:enrolconfig', context_course::instance($courseid))) {
+            if (!has_capability('moodle/course:enrolconfig', get_context_instance(CONTEXT_COURSE, $courseid))) {
                 return null;
             }
 
@@ -112,7 +112,7 @@
             // Need the course to see if idnumber present
             // when checking this next capability
             $course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
-            $edit_idnumber = has_capability('moodle/course:changeidnumber', context_course::instance($courseid));
+            $edit_idnumber = has_capability('moodle/course:changeidnumber', get_context_instance(CONTEXT_COURSE, $courseid));
 
             if (empty($course->idnumber)) {
                 if (!$edit_idnumber) {

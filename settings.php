@@ -329,7 +329,7 @@
          */
         $settings->add(new admin_setting_heading(enrol_shebang_processor::PLUGIN_NAME . '_enroll', get_string('LBL_ENROLL', enrol_shebang_processor::PLUGIN_NAME) . $OUTPUT->help_icon('LBL_ENROLL', enrol_shebang_processor::PLUGIN_NAME), ''));
 
-        $userOptions = array('' => get_string('LBL_ENROLL_ROLE_NOMAP', enrol_shebang_processor::PLUGIN_NAME)) + get_assignable_roles(context_course::instance(SITEID));
+        $userOptions = array('' => get_string('LBL_ENROLL_ROLE_NOMAP', enrol_shebang_processor::PLUGIN_NAME)) + get_assignable_roles(get_context_instance(CONTEXT_COURSE, SITEID));
         foreach(array('01','02','03','04','05','06','07','08') as $role_num) {
             $settings->add(new admin_setting_configselect(enrol_shebang_processor::PLUGIN_NAME . '/enroll_rolemap_' . $role_num, get_string('LBL_ENROLL_ROLEMAP_' . $role_num, enrol_shebang_processor::PLUGIN_NAME), '', '', $userOptions));
         }
