@@ -389,25 +389,27 @@
         private function prepare_logfiles()
         {
 
-            // If no alternate dir specified, use the default
-            if (empty($this->config->logging_dirpath)) {
-                $this->logging_dirpath = $this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME;
-            } else {
-                // An alternate location is specified
-                $this->logging_dirpath = preg_replace('/\/+$/', '', trim($this->config->logging_dirpath));
+            // If alternate directory configured then
+            // verify it exists and is writable
+            if (!empty($this->config->logging_dirpath)) {
+                $this->logging_dirpath = make_writable_directory(preg_replace('/\/+$/', '', trim($this->config->logging_dirpath)), false);
+            }
+            // If alternate directory not set or did not
+            // verify as writable dir, then use default
+            if (empty($this->logging_dirpath)) {
+                $this->logging_dirpath = make_writable_directory($this->moodleConfigs->dataroot . "/" . self::PLUGIN_NAME, false);
+            }
+            // If directory still not set at this point
+            // then neither alternate nor default verified
+            if (empty($this->logging_dirpath)) {
+                error_log(get_string('ERR_DATADIR_CREATE', self::PLUGIN_NAME));
+                throw new moodle_exception('ERR_DATADIR_CREATE', self::PLUGIN_NAME);
             }
 
             $log_date_suffix        = date(self::DATEFMT_LOG_FILEX);
             $this->messageLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_MESSAGE . $log_date_suffix;
             $this->processLogPath   = $this->logging_dirpath . "/" . self::LOGFILE_BASENAME_PROCESS . $log_date_suffix;
 
-
-            // Verify certain dirs are in place
-            if (   !is_dir($this->logging_dirpath)
-                && !mkdir($this->logging_dirpath, self::MKDIR_MODE, true)) {
-                error_log(get_string('ERR_DATADIR_CREATE', self::PLUGIN_NAME));
-                throw new moodle_exception('ERR_DATADIR_CREATE', self::PLUGIN_NAME);
-            }
             // Touch the message log before we need it, so we can die if no joy
             if (!file_exists($this->messageLogPath) && !touch($this->messageLogPath)) {
                 error_log(get_string('ERR_MESGLOG_NOOPEN', self::PLUGIN_NAME));
