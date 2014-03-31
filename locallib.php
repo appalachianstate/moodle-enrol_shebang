@@ -2516,7 +2516,7 @@
             //fix_course_sortorder();
 
             // new context created - better mark it as dirty
-            mark_context_dirty($context->path);
+            $context->mark_dirty();
 
             // Save any custom role names.
             //save_local_role_names($course->id, (array)$data);
