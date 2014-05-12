@@ -327,6 +327,14 @@
         /*
          * Enrollment messages
          */
+        $settings->add(new admin_setting_heading(enrol_shebang_processor::PLUGIN_NAME . '_enrollments', get_string('LBL_ENROLLMENTS', enrol_shebang_processor::PLUGIN_NAME) . $OUTPUT->help_icon('LBL_ENROLLMENTS', enrol_shebang_processor::PLUGIN_NAME), ''));
+
+        $settings->add(new admin_setting_configcheckbox(enrol_shebang_processor::PLUGIN_NAME . '/enrollments_delete_inactive', get_string('LBL_ENROLLMENTS_DELETE_INACTIVE', enrol_shebang_processor::PLUGIN_NAME), '', '0'));
+
+
+        /*
+         * Enrollment role mappsing
+         */
         $settings->add(new admin_setting_heading(enrol_shebang_processor::PLUGIN_NAME . '_enroll', get_string('LBL_ENROLL', enrol_shebang_processor::PLUGIN_NAME) . $OUTPUT->help_icon('LBL_ENROLL', enrol_shebang_processor::PLUGIN_NAME), ''));
 
         $userOptions = array('' => get_string('LBL_ENROLL_ROLE_NOMAP', enrol_shebang_processor::PLUGIN_NAME)) + get_assignable_roles(context_course::instance(SITEID));
