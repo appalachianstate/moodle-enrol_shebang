@@ -1939,9 +1939,13 @@
                               ? $lmb_data->section_source_id        // No cross-listing, or cross-listing using meta courses
                               : $crosslist_rec->parent_source_id;   // Cross-listing with merge method, use parent section
 
+            $suspend_enrollment = $lmb_data->status === self::STATUS_INACTIVE;
+            $delete_enrollment  = ($lmb_data->recstatus === self::RECSTATUS_DELETE)
+                               || ($this->config->enrollments_delete_inactive && $suspend_enrollment);
+
             return $this->process_user_enrollment($lmb_data->person_source_id, $target_source_id, $lmb_data->roletype,
                                               !empty($crosslist_rec) ? $crosslist_rec->group_id : 0,
-                                              $lmb_data->recstatus === self::RECSTATUS_DELETE, $lmb_data->status === self::STATUS_INACTIVE);
+                                              $delete_enrollment, $suspend_enrollment);
 
         } // import_membership_person
 
@@ -2198,6 +2202,7 @@
          * @param   string      $ims_role_type          IMS roletype value from the message
          * @param   int         $group_id               Optional group id to which to assign enrollee
          * @param   boolean     $unenroll               Optional unenroll indicator - default is false, which will enroll a user
+         * @param   boolean     $suspend                Optional suspend indicator - default is false, which will make enrollment active
          * @return  boolean                             Success or failure
          */
         private function process_user_enrollment($person_source_id, $section_source_id, $ims_role_type, $group_id = 0, $unenroll = false, $suspend = false)

@@ -1,6 +1,24 @@
 CHANGE LOG FOR ENROL_SHEBANG MOODLE PLUGIN
 --------------------------------------------------------------------------------
 
+2014052000:0.1.1 - 2014-05-20
+
+Add config to allow enroll (membership) messages with role status 0 (inactive)
+to be treated the same as role with recstatus 3 (delete). With this config on,
+reverts to 0.0.9 behavior.
+
+Require either JMSMessageId or ldisp_id instead of both. Apache 2.4 will remove
+the ldisp_id header (underscores not allowed in header names), so value will be
+lost.
+
+Remove calls to deprecated get_context_instance(), and mark_context_dirty().
+
+Handle case where configured logdir is invalid, fallback to default rather than
+puke an error.
+
+Respect the moodle/course:changeidnumber capability when adding/editing enrol
+instances.
+
 2013080501:0.1.0 - 2013-10-08
 
 Reorganize code to separate message processing from the enrol plugin class, and

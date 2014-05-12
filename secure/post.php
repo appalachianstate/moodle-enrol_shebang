@@ -73,7 +73,7 @@
                ? $_SERVER[SHEBANG_HEADER_MSGID]
                : "";
 
-    if (!$ldisp_id || !$jms_id) {
+    if (!$ldisp_id && !$jms_id) {
         header("HTTP/1.0 400 Bad Request");
         die(get_string('ERR_MSG_NOHEADERS', enrol_shebang_processor::PLUGIN_NAME));
     }
