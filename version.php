@@ -35,7 +35,7 @@
     $plugin             = new stdClass();
 
     $plugin->version    = 2014052000;
-    $plugin->requires   = 2013051400;
-    $plugin->release    = "0.1.1-25 (Build 20140520)";
+    $plugin->requires   = 2013111800;
+    $plugin->release    = "0.1.1-26 (Build 20140520)";
     $plugin->cron       = 1;
     $plugin->maturity   = MATURITY_STABLE;

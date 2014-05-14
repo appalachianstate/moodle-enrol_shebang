@@ -1335,7 +1335,14 @@
                     $this->moodleDB->update_record(self::MOODLENT_ENROL, $instance_rec);
                 }
 
-                events_trigger('course_updated', $course_rec);
+                // Trigger a course updated event.
+                $event = \core\event\course_updated::create(array(
+                        'objectid' => $course_rec->id,
+                        'context' => context_course::instance($course_rec->id),
+                        'other' => array('shortname' => $course_rec->shortname,
+                                'fullname' => $course_rec->fullname)
+                ));
+                $event->trigger();
             }
             catch (Exception $exc)
             {
@@ -1633,8 +1640,9 @@
             try
             {
                 $user_rec->id = $this->moodleDB->insert_record(self::MOODLENT_USER, $user_rec, true);
-                context_user::instance($user_rec->id);
-                events_trigger('user_created', $user_rec);
+                $user_context = context_user::instance($user_rec->id);
+                $event = \core\event\user_created::create(array('objectid' => $user_rec->id, 'context' => $user_context));
+                $event->trigger();
             }
             catch (Exception $exc)
             {
@@ -2538,11 +2546,14 @@
             // set up enrolments
             enrol_course_updated(true, $course, $data);
 
-            // No need to log this
-            //add_to_log(SITEID, 'course', 'new', 'view.php?id='.$course->id, $data->fullname.' (ID '.$course->id.')');
-
-            // Trigger events
-            events_trigger('course_created', $course);
+            // Trigger a course created event.
+            $event = \core\event\course_created::create(array(
+                    'objectid' => $course->id,
+                    'context' => context_course::instance($course->id),
+                    'other' => array('shortname' => $course->shortname,
+                            'fullname' => $course->fullname)
+            ));
+            $event->trigger();
 
             return $course;
         }
