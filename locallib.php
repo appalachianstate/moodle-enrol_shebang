@@ -2473,7 +2473,7 @@
             // Then an application-level check for shortname
             if (!empty($data->shortname)) {
                 if ($this->moodleDB->record_exists('course', array('shortname' => $data->shortname))) {
-                    throw new moodle_exception('shortnametaken');
+                    throw new moodle_exception('shortnametaken', '', '', $data->shortname);
                 }
             }
 
@@ -2531,7 +2531,7 @@
             // Create a default section.
             course_create_sections_if_missing($course, 0);
 
-            // To expensive to do in a batch import,
+            // Too expensive to do in batch import,
             // defer until last course is processed
             //fix_course_sortorder();
             // purge appropriate caches in case fix_course_sortorder() did not change anything
@@ -2549,9 +2549,9 @@
             // Trigger a course created event.
             $event = \core\event\course_created::create(array(
                     'objectid' => $course->id,
-                    'context' => context_course::instance($course->id),
-                    'other' => array('shortname' => $course->shortname,
-                            'fullname' => $course->fullname)
+                    'context'  => context_course::instance($course->id),
+                    'other'    => array('shortname' => $course->shortname,
+                                        'fullname'  => $course->fullname)
             ));
             $event->trigger();
 
