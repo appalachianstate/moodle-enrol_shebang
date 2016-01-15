@@ -2525,12 +2525,6 @@
 
             $course = course_get_format($newcourseid)->get_course();
 
-            // Setup the blocks
-            blocks_add_default_course_blocks($course);
-
-            // Create a default section.
-            course_create_sections_if_missing($course, 0);
-
             // Too expensive to do in batch import,
             // defer until last course is processed
             //fix_course_sortorder();
@@ -2539,12 +2533,6 @@
 
             // new context created - better mark it as dirty
             $context->mark_dirty();
-
-            // Save any custom role names.
-            //save_local_role_names($course->id, (array)$data);
-
-            // set up enrolments
-            enrol_course_updated(true, $course, $data);
 
             // Trigger a course created event.
             $event = \core\event\course_created::create(array(
@@ -2555,6 +2543,23 @@
             ));
             $event->trigger();
 
+            // Setup the blocks
+            blocks_add_default_course_blocks($course);
+            
+            // Create a default section.
+            course_create_sections_if_missing($course, 0);
+            
+            // Save any custom role names. We don't do this
+            //save_local_role_names($course->id, (array)$data);
+
+            // set up enrolments
+            enrol_course_updated(true, $course, $data);
+
+            // Update course tags. No tags to consider
+            //if ($CFG->usetags && isset($data->tags)) {
+            //    tag_set('course', $course->id, $data->tags, 'core', context_course::instance($course->id)->id);
+            //}  
+                      
             return $course;
         }
 
