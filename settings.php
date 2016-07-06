@@ -74,6 +74,8 @@
      * person_locality_default
      * person_country
      * person_idnumber_sctid
+     * person_nickname_prefer
+     * person_fullname_desc
      *
      * course_category
      * course_category_id
@@ -220,9 +222,9 @@
 
         $settings->add(new admin_setting_configtext(enrol_shebang_processor::PLUGIN_NAME     . '/person_shib_domain', get_string('LBL_PERSON_SHIB_DOMAIN', enrol_shebang_processor::PLUGIN_NAME), '', ''));
 
-        $settings->add(new admin_setting_configselect(enrol_shebang_processor::PLUGIN_NAME   . '/person_password', get_string('LBL_PERSON_PASSWORD', enrol_shebang_processor::PLUGIN_NAME), '', '',
+        $settings->add(new admin_setting_configselect(enrol_shebang_processor::PLUGIN_NAME   . '/person_password',    get_string('LBL_PERSON_PASSWORD', enrol_shebang_processor::PLUGIN_NAME), '', '',
             array(
-              ''                                                     => get_string('LBL_PERSON_PASSWORD_RANDOM',       enrol_shebang_processor::PLUGIN_NAME),
+              ''                                                        => get_string('LBL_PERSON_PASSWORD_RANDOM',       enrol_shebang_processor::PLUGIN_NAME),
               enrol_shebang_processor::OPT_PERSON_USERNAME_USERID_LOGON => get_string('LBL_PERSON_PASSWORD_USERID_LOGON', enrol_shebang_processor::PLUGIN_NAME),
               enrol_shebang_processor::OPT_PERSON_PASSWORD_USERID_SCTID => get_string('LBL_PERSON_PASSWORD_USERID_SCTID', enrol_shebang_processor::PLUGIN_NAME)
             )));
@@ -241,18 +243,22 @@
 
         $settings->add(new admin_setting_configcheckbox(enrol_shebang_processor::PLUGIN_NAME . '/person_address_changes',   get_string('LBL_PERSON_ADDRESS_CHANGES',   enrol_shebang_processor::PLUGIN_NAME), '', '1'));
 
-        $settings->add(new admin_setting_configselect(enrol_shebang_processor::PLUGIN_NAME   . '/person_locality', get_string('LBL_PERSON_LOCALITY', enrol_shebang_processor::PLUGIN_NAME), '', enrol_shebang_processor::OPT_PERSON_LOCALITY_IFF,
+        $settings->add(new admin_setting_configselect(enrol_shebang_processor::PLUGIN_NAME   . '/person_locality',          get_string('LBL_PERSON_LOCALITY',          enrol_shebang_processor::PLUGIN_NAME), '', enrol_shebang_processor::OPT_PERSON_LOCALITY_IFF,
             array(
                 enrol_shebang_processor::OPT_PERSON_LOCALITY_MSG => get_string('LBL_PERSON_LOCALITY_MSG', enrol_shebang_processor::PLUGIN_NAME),
                 enrol_shebang_processor::OPT_PERSON_LOCALITY_DEF => get_string('LBL_PERSON_LOCALITY_DEF', enrol_shebang_processor::PLUGIN_NAME),
                 enrol_shebang_processor::OPT_PERSON_LOCALITY_IFF => get_string('LBL_PERSON_LOCALITY_IFF', enrol_shebang_processor::PLUGIN_NAME)
             )));
 
-        $settings->add(new admin_setting_configtext(enrol_shebang_processor::PLUGIN_NAME     . '/person_locality_default', get_string('LBL_PERSON_LOCALITY_DEFAULT', enrol_shebang_processor::PLUGIN_NAME), '', ''));
+        $settings->add(new admin_setting_configtext(enrol_shebang_processor::PLUGIN_NAME     . '/person_locality_default',  get_string('LBL_PERSON_LOCALITY_DEFAULT',  enrol_shebang_processor::PLUGIN_NAME), '', ''));
 
-        $settings->add(new admin_setting_configselect(enrol_shebang_processor::PLUGIN_NAME   . '/person_country', get_string('LBL_PERSON_COUNTRY', enrol_shebang_processor::PLUGIN_NAME), '', enrol_shebang_processor::DEF_PERSON_COUNTRY, get_string_manager()->get_list_of_countries()));
+        $settings->add(new admin_setting_configselect(enrol_shebang_processor::PLUGIN_NAME   . '/person_country',           get_string('LBL_PERSON_COUNTRY',           enrol_shebang_processor::PLUGIN_NAME), '', enrol_shebang_processor::DEF_PERSON_COUNTRY, get_string_manager()->get_list_of_countries()));
 
-        $settings->add(new admin_setting_configcheckbox(enrol_shebang_processor::PLUGIN_NAME . '/person_idnumber_sctid',   get_string('LBL_PERSON_IDNUMBER_SCTID',   enrol_shebang_processor::PLUGIN_NAME), '', '0'));
+        $settings->add(new admin_setting_configcheckbox(enrol_shebang_processor::PLUGIN_NAME . '/person_idnumber_sctid',    get_string('LBL_PERSON_IDNUMBER_SCTID',    enrol_shebang_processor::PLUGIN_NAME), '', '0'));
+
+        $settings->add(new admin_setting_configcheckbox(enrol_shebang_processor::PLUGIN_NAME . '/person_nickname_prefer',   get_string('LBL_PERSON_NICKNAME_PREFER',   enrol_shebang_processor::PLUGIN_NAME), '', '0'));
+
+        $settings->add(new admin_setting_configcheckbox(enrol_shebang_processor::PLUGIN_NAME . '/person_fullname_desc',     get_string('LBL_PERSON_FULLNAME_DESC',     enrol_shebang_processor::PLUGIN_NAME), '', '1'));
 
         /*
          * Course-section (group) messages

@@ -1605,7 +1605,18 @@
                 $user_rec->idnumber = $lmb_data->source_id;
             }
 
+            // If nickname is preferred then record that
+            // in staging record as given_name; cheesed,
+            // but avoiding adding column for this change
+
             $user_rec->firstname = $lmb_data->given_name;
+            if ($this->config->person_nickname_prefer) {
+                $nickname = $xpath->evaluate("string(/PERSON/NAME/NICKNAME)");
+                if ($nickname) {
+                    $user_rec->firstname = $nickname;
+                }
+            }
+
             $user_rec->lastname  = $lmb_data->family_name;
             $user_rec->email     = $lmb_data->email;
 
@@ -1632,7 +1643,7 @@
                 }
             }
 
-            $user_rec->description  = $lmb_data->full_name;
+            $user_rec->description  = ($this->config->person_fullname_desc) ? $lmb_data->full_name : '';
             $user_rec->timecreated  =
             $user_rec->timemodified = strtotime($lmb_data->update_date);
 
@@ -1677,8 +1688,21 @@
             $user_rec->username = $username;
 
             if ($this->config->person_firstname_changes) {
+
+                // If nickname is preferred then record that
+                // in staging record as given_name; cheesed,
+                // but avoiding adding column for this change
+
                 $user_rec->firstname = $lmb_data->given_name;
+                if ($this->config->person_nickname_prefer) {
+                    $nickname = $xpath->evaluate("string(/PERSON/NAME/NICKNAME)");
+                    if ($nickname) {
+                        $user_rec->firstname = $nickname;
+                    }
+                }
+
             }
+
             if ($this->config->person_lastname_changes) {
                 $user_rec->lastname = $lmb_data->family_name;
             }
@@ -2545,10 +2569,10 @@
 
             // Setup the blocks
             blocks_add_default_course_blocks($course);
-            
+
             // Create a default section.
             course_create_sections_if_missing($course, 0);
-            
+
             // Save any custom role names. We don't do this
             //save_local_role_names($course->id, (array)$data);
 
@@ -2558,8 +2582,8 @@
             // Update course tags. No tags to consider
             //if ($CFG->usetags && isset($data->tags)) {
             //    tag_set('course', $course->id, $data->tags, 'core', context_course::instance($course->id)->id);
-            //}  
-                      
+            //}
+
             return $course;
         }
 
