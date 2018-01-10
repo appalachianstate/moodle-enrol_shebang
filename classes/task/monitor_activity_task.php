@@ -23,14 +23,45 @@
      * @subpackage  shebang
      */
 
+    namespace enrol_shebang\task;
+
+    use core\task\scheduled_task;
+
     defined('MOODLE_INTERNAL') || die();
 
+    require_once(__DIR__ . '/../../locallib.php');
 
-    $capabilities = array(
-        'enrol/shebang:config'  => array('captype'      => 'write',
-                                         'contextlevel' => CONTEXT_COURSE,
-                                         'archetypes'   => array('manager' => CAP_ALLOW, 'editingteacher' => CAP_ALLOW)),
-        'enrol/shebang:unenrol' => array('captype'      => 'write',
-                                         'contextlevel' => CONTEXT_COURSE,
-                                         'archetypes'   => array('manager' => CAP_ALLOW, 'editingteacher' => CAP_ALLOW)),
-    );
+
+
+    class monitor_activity_task extends scheduled_task
+    {
+
+        /**
+         * {@inheritDoc}
+         * @see \core\task\scheduled_task::get_name()
+         */
+        public function get_name()
+        {
+            return get_string('monitor_activity_task_name', 'enrol_shebang');
+        }
+
+
+        /**
+         * {@inheritDoc}
+         * @see \core\task\task_base::execute()
+         */
+        public function execute()
+        {
+
+            try {
+                $processor = new \enrol_shebang_processor();
+                $processor->monitor_activity();
+            }
+            catch (Exception $exc) {
+                $info = get_exception_info($exc);
+                mtrace(bootstrap_renderer::early_error($info->message, $info->moreinfourl, $info->link, $info->backtrace, $info->debuginfo, $info->errorcode));
+            }
+
+        }
+
+    }

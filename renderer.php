@@ -139,7 +139,8 @@
                 }
 
                 // Default row elements
-                $row = array($file->get_filename(), userdate($file->get_timemodified()), display_size($file->get_filesize()));
+                $fileurl = moodle_url::make_pluginfile_url(context_system::instance()->id, 'enrol_shebang', 'uploads', $file->get_itemid(), $file->get_filepath(), $file->get_filename());
+                $row = array(html_writer::link($fileurl, $file->get_filename()), userdate($file->get_timemodified()), display_size($file->get_filesize()));
 
                 // Optional row elements
 

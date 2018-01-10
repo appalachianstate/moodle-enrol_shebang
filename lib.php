@@ -44,9 +44,7 @@
          */
         public function allow_unenrol(stdClass $instance)
         {
-
             return true;
-
         }
 
 
@@ -56,9 +54,7 @@
          */
         public function allow_unenrol_user(stdClass $instance, stdClass $ue)
         {
-
             return true;
-
         }
 
 
@@ -167,34 +163,64 @@
 
 
         /**
-         * @see enrol_plugin::cron()
+         * @see enrol_plugin::can_hide_show_instance()
          */
-        public function cron()
+        public function can_hide_show_instance($instance)
         {
-            global $CFG;
-            require_once(dirname(__FILE__) . '/locallib.php');
+
+            $context = context_course::instance($instance->courseid);
+            return has_capability('enrol/shebang:config', $context);
+
+        }
 
 
-            mtrace(get_string('INF_CRON_START', self::PLUGIN_NAME));
-
-            // Monitor message activity
-            try {
-                $processor = new enrol_shebang_processor();
-                $processor->cron_monitor_activity();
-            }
-            catch (Exception $exc) {
-                $info = get_exception_info($exc);
-                mtrace(bootstrap_renderer::early_error($info->message, $info->moreinfourl, $info->link, $info->backtrace, $info->debuginfo, $info->errorcode));
-            }
-
-
-            // Next task(s)...
-
-
-            // Our work is done here
-            mtrace(get_string('INF_CRON_FINISH', self::PLUGIN_NAME));
-
-        } // cron
+        /***
+         * {@inheritDoc}
+         * @see enrol_plugin::is_cron_required()
+         */
+        public function is_cron_required()
+        {
+            return false;
+        }
 
 
     } // class
+
+
+    /**
+     * Download files from the enrol_shebang plugin
+     *
+     * @param stdClass $course course object
+     * @param stdClass $cm course module object
+     * @param stdClass $context context object
+     * @param string $filearea file area
+     * @param array $args extra arguments
+     * @param bool $forcedownload whether or not force download
+     * @param array $options additional options affecting the file serving
+     * @return mixed false if file not found, otherwise send file and exit
+     */
+    function enrol_shebang_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=array())
+    {
+
+        if ($context->contextlevel != CONTEXT_SYSTEM) {
+            return false;
+        }
+
+        // No anonymous access for this page
+        require_login();
+
+        // Must be a site administrator
+        require_capability('moodle/site:config', context_system::instance());
+
+        if (!$file = get_file_storage()->get_file_by_hash(sha1("/{$context->id}/enrol_shebang/{$filearea}/" . implode('/', $args)))) {
+            return false;
+        }
+
+        if ($file->is_directory()) {
+            return false;
+        }
+
+        // Send it
+        send_stored_file($file, 0, 0, true, $options);
+
+    }

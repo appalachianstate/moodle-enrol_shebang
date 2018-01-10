@@ -26,11 +26,16 @@
     defined('MOODLE_INTERNAL') || die();
 
 
-    $capabilities = array(
-        'enrol/shebang:config'  => array('captype'      => 'write',
-                                         'contextlevel' => CONTEXT_COURSE,
-                                         'archetypes'   => array('manager' => CAP_ALLOW, 'editingteacher' => CAP_ALLOW)),
-        'enrol/shebang:unenrol' => array('captype'      => 'write',
-                                         'contextlevel' => CONTEXT_COURSE,
-                                         'archetypes'   => array('manager' => CAP_ALLOW, 'editingteacher' => CAP_ALLOW)),
+
+    $tasks = array(
+        array(
+            'classname' => 'enrol_shebang\task\monitor_activity_task',
+            'blocking'  => 0,
+            'minute'    => '15,45',
+            'hour'      => '8-17',
+            'day'       => '*',
+            'dayofweek' => '1,2,3,4,5',
+            'month'     => '*',
+            'disabled'  => 1
+        )
     );

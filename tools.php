@@ -24,6 +24,8 @@
      */
 
 
+    define('NO_OUTPUT_BUFFERING', true);
+
     // Get Moodle going
     require_once(dirname(__FILE__) . '/../../config.php');
     // Need our particular enrollment plugin's consts

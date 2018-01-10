@@ -84,7 +84,6 @@
             global $CFG, $SITE, $OUTPUT, $PAGE, $USER, $_REQUEST;
 
 
-
             $system_context = context_system::instance();
 
             $admin_url  = new moodle_url("{$CFG->wwwroot}/admin/settings.php", array('section' => 'enrolsettingsshebang'));
@@ -150,7 +149,6 @@
 
                                 // Now do the import work and emit some feedback
                                 echo $OUTPUT->box_start();
-                                ob_flush(); flush();
 
                                 $feedback = new progress_bar('shebang_pb', 500, true);
                                 $plugin   = new enrol_shebang_processor();

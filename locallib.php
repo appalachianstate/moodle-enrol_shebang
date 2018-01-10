@@ -136,9 +136,6 @@
         const OPT_COURSE_CATEGORY_NEST          = 'nest';
         const OPT_COURSE_CATEGORY_PICK          = 'pick';
 
-        const OPT_CROSSLIST_METHOD_MERGE        = 'merge';
-        const OPT_CROSSLIST_METHOD_META         = 'meta';
-
         const OPT_SECURE_METHOD_BASIC           = 'basic';
         const OPT_SECURE_METHOD_DIGEST          = 'digest';
 
@@ -1953,31 +1950,66 @@
             }
 
 
-            // Will need to know if the specified section is part of a course cross-list
-            $crosslist_rec = !empty($this->config->crosslist_enabled)
-                           ? $this->moodleDB->get_record_select(self::SHEBANGENT_CROSSLIST,
-                                                                "status = :status and recstatus != :recstatus and child_source_id = :child_source_id",
-                                                                array('status' => self::STATUS_ACTIVE, 'recstatus' => self::RECSTATUS_DELETE, 'child_source_id' => $lmb_data->section_source_id))
-                           : null;
-
-            // If there's no cross-list record (either because it did not exist or our
-            // configs indicated we are not handling cross-list messages) then use the
-            // course specified in the message. Likewise, if we do handle cross-list
-            // messages, but implement it with metacourses, use the course specified
-            // in the message and let Moodle sync the enrollments. Only in the third
-            // case where we handle cross-listing by merging enrollments into a non-
-            // meta course, do we find the parent course and make enrollments in that.
-            $target_source_id = (empty($crosslist_rec) || $this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_META)
-                              ? $lmb_data->section_source_id        // No cross-listing, or cross-listing using meta courses
-                              : $crosslist_rec->parent_source_id;   // Cross-listing with merge method, use parent section
-
             $suspend_enrollment = $lmb_data->status === self::STATUS_INACTIVE;
             $delete_enrollment  = ($lmb_data->recstatus === self::RECSTATUS_DELETE)
                                || ($this->config->enrollments_delete_inactive && $suspend_enrollment);
 
-            return $this->process_user_enrollment($lmb_data->person_source_id, $target_source_id, $lmb_data->roletype,
-                                              !empty($crosslist_rec) ? $crosslist_rec->group_id : 0,
-                                              $delete_enrollment, $suspend_enrollment);
+            // Get target course, and its context
+            if (false === ($course_rec = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $lmb_data->section_source_id)))) {
+                $this->log_process_message(self::MOODLENT_COURSE, $lmb_data->section_source_id, 'select', get_string('ERR_COURSE_IDNUMBER', self::PLUGIN_NAME));
+                return false;
+            }
+
+            // Get this plugin's enrol instance for the course
+            if (false === ($enrol_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $course_rec->id, 'enrol' => $this->enrol_plugin->get_name(), 'status' => ENROL_INSTANCE_ENABLED)))) {
+                $this->log_process_message(self::MOODLENT_ENROL, $course_rec->id, 'select', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
+                return false;
+            }
+
+            // Find the appropriate role mapping
+            if (false === ($role_id = $this->get_role_mapping($lmb_data->roletype))) {
+                $this->log_process_message(self::MOODLENT_ROLE_ASSIGNMENT, $lmb_data->roletype, 'select', get_string('ERR_ENROLL_ROLETYPE_NOMAP', self::PLUGIN_NAME));
+                return false;
+            }
+
+            // Fetch the user by joining with the staging record
+            // which has both the Luminis source id and Moodle
+            // user id values
+            $query = "SELECT u.* "
+                   . "  FROM {" . self::MOODLENT_USER . "} u "
+                   . " INNER JOIN {" . self::SHEBANGENT_PERSON . "} p "
+                   . "    ON p.userid_moodle = u.id "
+                   . " WHERE p.source_id = :source_id AND u.deleted = 0";
+            $parms = array('source_id' => $lmb_data->person_source_id);
+
+            if (false === ($user_rec = $this->moodleDB->get_record_sql($query, $parms))) {
+                $this->log_process_message(self::MOODLENT_USER, $lmb_data->person_source_id, 'select', get_string('ERR_PERSON_SOURCE_ID', self::PLUGIN_NAME));
+                return false;
+            }
+
+            try
+            {
+                if ($delete_enrollment) {
+                    // If the role recstatus attribute or member status
+                    // sub-element indicated to unenroll this user
+                    $op = 'unenrol';
+                    $this->enrol_plugin->unenrol_user($enrol_instance, $user_rec->id);
+                } else {
+                    // Otherwise, enroll or update current enrollment
+                    $op = 'enrol';
+                    $this->enrol_plugin->enrol_user($enrol_instance, $user_rec->id, $role_id, 0, 0, $suspend_enrollment ? ENROL_USER_SUSPENDED : ENROL_USER_ACTIVE);
+                }
+                $rc = true;
+            }
+            catch (Exception $exc)
+            {
+                $this->log_process_exception($exc);
+                $rc = false;
+            }
+
+            $this->log_process_message(self::MOODLENT_USER_ENROL, "{$enrol_instance->courseid}:{$role_id}:{$user_rec->id}", $op, $rc);
+
+            return $rc;
 
         } // import_membership_person
 
@@ -2015,18 +2047,15 @@
                 return false;
             }
 
-            // If supposed to do meta course
-            if ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_META) {
-                // Is that enrol plugin enabled?
-                if (enrol_is_enabled('meta')) {
-                    // We will need the meta plugin
-                    // to do some work for us
-                    $meta_plugin = enrol_get_plugin('meta');
-                } else {
-                    // No joy
-                    $this->log_process_message(self::SHEBANGENT_CROSSLIST, "{$lmb_data->parent_source_id}:{$lmb_data->child_source_id}", $op, get_string('ERR_METANOTENABLED', self::PLUGIN_NAME));
-                    return false;
-                }
+            // Is meta enrol plugin enabled?
+            if (enrol_is_enabled('meta')) {
+                // We will need the meta plugin
+                // to do some work for us
+                $meta_plugin = enrol_get_plugin('meta');
+            } else {
+                // No joy
+                $this->log_process_message(self::SHEBANGENT_CROSSLIST, "{$lmb_data->parent_source_id}:{$lmb_data->child_source_id}", $op, get_string('ERR_METANOTENABLED', self::PLUGIN_NAME));
+                return false;
             }
 
             // Insert or update the staging rec
@@ -2073,86 +2102,30 @@
             // If recstatus/status indicate an end to the parent child relationship
             if ($lmb_data->recstatus === self::RECSTATUS_DELETE || $lmb_data->status === self::STATUS_INACTIVE) {
                 // Remove the parent-child association.
-                if ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_META) {
-                    if ($parent_course && false !== ($meta_enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course->id)))) {
-                        if ($lmb_data->recstatus === self::RECSTATUS_DELETE) {
-                            // Remove the child from the metacourse and enrollments will get sync'd
-                            $meta_plugin->delete_instance($meta_enroll_instance);
-                            $rc = true;
-                        } else {
-                            // Disable the enrol instance for the one child course
-                            $meta_enroll_instance->status = ENROL_INSTANCE_DISABLED;
-                            $this->moodleDB->update_record(self::MOODLENT_ENROL, $meta_enroll_instance);
-                        }
-                    }
-                } else {
-                    // With the staging record already updated (recstatus and/or status), no
-                    // new enrollments will be made in the parent merge course, but need to
-                    // remove existing enrollments in parent and place them in child course
-                    $all_enrolls_succeeded = true;
-                    $members_array = $this->moodleDB->get_recordset(self::SHEBANGENT_MEMBER, array('section_source_id' => $lmb_data->child_source_id, 'recstatus' => self::RECSTATUS_ADD, 'status' => self::STATUS_ACTIVE));
-                    foreach ($members_array as $member) {
-
-                        if ($lmb_data->recstatus === self::RECSTATUS_DELETE) {
-
-                            // Put member into the course which is no longer a child course and is
-                            // the course for which the person membership was originally designated
-                            if (false !== ($rc = $this->process_user_enrollment($member->person_source_id, $member->section_source_id, $member->roletype))) {
-                                // and succeeding that, take member out of the old parent *merge* course
-                                if (false === ($rc = $this->process_user_enrollment($member->person_source_id, $lmb_data->parent_source_id, $member->roletype, 0, true))) {
-                                    $all_enrolls_succeeded = false;
-                                    $this->log_process_message(self::MOODLENT_USER_ENROL, "{$member->person_source_id}:{$lmb_data->parent_source_id}", 'delete', get_string('ERR_UNENROLL_FAIL', self::PLUGIN_NAME));
-                                }
-                            } else {
-                                $all_enrolls_succeeded = false;
-                                $this->log_process_message(self::MOODLENT_USER_ENROL, "{$member->person_source_id}:{$member->section_source_id}", 'insert', get_string('ERR_ENROLL_FAIL', self::PLUGIN_NAME));
-                            }
-
-                        } else {
-
-                            // Suspend in the *merge* course
-                            if (false === ($rc = $this->process_user_enrollment($member->person_source_id, $lmb_data->parent_source_id, $member->roletype, 0, false, true))) {
-                                $all_enrolls_succeeded = false;
-                                $this->log_process_message(self::MOODLENT_USER_ENROL, "{$member->person_source_id}:{$lmb_data->parent_source_id}", 'update', get_string('ERR_SUSPEND_FAIL', self::PLUGIN_NAME));
-                            }
-
-                        }
-
-                    } // foreach
-
-                    $rc = $all_enrolls_succeeded;
-                }
-
-                // Remove group for this child course only when membership deleted
-                if ($lmb_data->recstatus === self::RECSTATUS_DELETE) {
-                    if (!empty($lmb_data->group_id) && !groups_delete_group($lmb_data->group_id)) {
-                        $this->log_process_message(self::MOODLENT_GROUP, $lmb_data->group_id, 'delete', false);
-                        $rc = false;
+                if ($parent_course && false !== ($meta_enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course->id)))) {
+                    if ($lmb_data->recstatus === self::RECSTATUS_DELETE) {
+                        // Remove the child from the metacourse and enrollments will get sync'd
+                        $meta_plugin->delete_instance($meta_enroll_instance);
                     } else {
-                        $lmb_data->group_id = 0;
-                        $this->moodleDB->update_record(self::SHEBANGENT_CROSSLIST, $lmb_data);
+                        // Disable the enrol instance for the one child course
+                        $meta_enroll_instance->status = ENROL_INSTANCE_DISABLED;
+                        $this->moodleDB->update_record(self::MOODLENT_ENROL, $meta_enroll_instance);
                     }
                 }
-
                 return $rc;
-
             }
+
 
             // The message recstatus/status indicate an add. This may be the first
             // message for a given parent course, so we need to check first that it
             // has been created. The LMB message only provides a source id for the
             // parent course, so let's set it up based on the given child course
             if (!$parent_course) {
-
                 $parent_course_data                 = $this->create_empty_course_object();
-
                 $parent_course_data->idnumber       = $lmb_data->parent_source_id;
                 $parent_course_data->category       = $child_course->category;
                 $parent_course_data->fullname       = $this->config->crosslist_fullname_prefix  . $child_course->fullname;
                 $parent_course_data->shortname      = $this->config->crosslist_shortname_prefix . $child_course->shortname;
-                $parent_course_data->timecreated    =
-                $parent_course_data->timemodified   = strtotime($lmb_data->update_date);
-
                 try
                 {
                     // Call this plugin's create_course method which mimics
@@ -2168,25 +2141,19 @@
                     $this->log_process_message(self::MOODLENT_COURSE, $lmb_data->parent_source_id, 'insert', get_string('ERR_CREATE_PARENT_COURSE', self::PLUGIN_NAME));
                     return false;
                 }
-
             } // if (!$parent_course)
 
 
             // At this point we have a parent course and a child course. The parent course
-            // now needs an enroll plugin instance if there is not one already. Which plugin
-            // is used depends on the cross-list method selected.
-            if ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_META) {
-                $enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course->id));
-                if (false == $enroll_instance) {
-                    $enroll_instance_id = $meta_plugin->add_instance($parent_course, array('customint1' => $child_course->id));
-                } elseif ($enroll_instance->status == ENROL_INSTANCE_DISABLED) {
-                    $enroll_instance->status = ENROL_INSTANCE_ENABLED;
-                    $enroll_instance->timemodified = time();
-                    $this->moodleDB->update_record(self::MOODLENT_ENROL, $enroll_instance);
-                }
-                $meta_plugin->course_updated(false, $parent_course, null);
-            } elseif ($this->config->crosslist_method == self::OPT_CROSSLIST_METHOD_MERGE && false === ($enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $this->enrol_plugin->get_name())))) {
-                $enroll_instance_id = $this->enrol_plugin->add_instance($parent_course);
+            // now needs an enroll plugin instance if there is not one already.
+            $enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $parent_course->id, 'enrol' => $meta_plugin->get_name(), 'customint1' => $child_course->id));
+            if (false == $enroll_instance) {
+                $enroll_instance_id = $meta_plugin->add_instance($parent_course, array('customint1' => $child_course->id));
+                $enroll_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('id' => $enroll_instance_id));
+            } elseif ($enroll_instance->status == ENROL_INSTANCE_DISABLED) {
+                $enroll_instance->status = ENROL_INSTANCE_ENABLED;
+                $enroll_instance->timemodified = time();
+                $this->moodleDB->update_record(self::MOODLENT_ENROL, $enroll_instance);
             }
 
             // Hide the child course if the config says to do so
@@ -2194,27 +2161,34 @@
                 $this->moodleDB->set_field(self::MOODLENT_COURSE, 'visible', 0, array('id' => $child_course->id));
             }
 
+
             // If a group is needed, create one (if it does not exist) in the parent,
             // but named for the child section.
-            if (isset($this->config->crosslist_groups) && !empty($this->config->crosslist_groups) && (!isset($lmb_data->group_id) || empty($lmb_data->group_id))) {
+            if (isset($this->config->crosslist_groups) && !empty($this->config->crosslist_groups) && empty($enroll_instance->customint2)) {
                 $group_rec = new stdClass();
                 $group_rec->courseid    = $parent_course->id;
                 $group_rec->name        =
                 $group_rec->description = $child_course->shortname;
-                if (false === ($group_rec->id = groups_create_group($group_rec))) {
-                    $this->log_process_message(self::MOODLENT_GROUP, $parent_course->id, 'insert', get_string('ERR_CREATE_CROSSLIST_GROUP', self::PLUGIN_NAME));
-                    return false;
+                // Is there already a group with the name we plan to use
+                if (false === ($group_rec->id = groups_get_group_by_name($group_rec->courseid, $group_rec->name))) {
+                    // No group by that name yet
+                    unset($group_rec->id); $group_rec->id = groups_create_group($group_rec);
+                    if (false === $group_rec->id) {
+                        // Could not create group for some reason
+                        $this->log_process_message(self::MOODLENT_GROUP, $parent_course->id, 'insert', get_string('ERR_CREATE_CROSSLIST_GROUP', self::PLUGIN_NAME));
+                        return false;
+                    }
                 }
-                // Update the cross-list staging rec with the new group id
-                $lmb_data->group_id = $group_rec->id;
+                // Update the course meta-link with the group id
+                $enroll_instance->customint2 = $group_rec->id;
                 try
                 {
-                    $this->moodleDB->update_record(self::SHEBANGENT_CROSSLIST, $lmb_data);
+                    $this->moodleDB->update_record(self::MOODLENT_ENROL, $enroll_instance);
                 }
                 catch (Exception $exc)
                 {
                     $this->log_process_exception($exc);
-                    $this->log_process_message(self::SHEBANGENT_CROSSLIST, $lmb_data->id, 'update', get_string('ERR_UPDATE_CROSSLIST_GROUP', self::PLUGIN_NAME));
+                    $this->log_process_message(self::MOODLENT_ENROL, $enroll_instance->id, 'update', get_string('ERR_UPDATE_CROSSLIST_GROUP', self::PLUGIN_NAME));
                     return false;
                 }
             } // isset($this->config->crosslist_groups) ...
@@ -2222,88 +2196,6 @@
             return true;
 
         } // import_membership_group
-
-
-
-        /**
-         * Do the work of making the enrollment and role assignment
-         *
-         * @access  private
-         * @param   string      $person_source_id       Luminis Id (sourcedid/id) for the person
-         * @param   string      $section_source_id      Luminis Id (sourcedid/id) for the course section (CRN)
-         * @param   string      $ims_role_type          IMS roletype value from the message
-         * @param   int         $group_id               Optional group id to which to assign enrollee
-         * @param   boolean     $unenroll               Optional unenroll indicator - default is false, which will enroll a user
-         * @param   boolean     $suspend                Optional suspend indicator - default is false, which will make enrollment active
-         * @return  boolean                             Success or failure
-         */
-        private function process_user_enrollment($person_source_id, $section_source_id, $ims_role_type, $group_id = 0, $unenroll = false, $suspend = false)
-        {
-
-            $rc = false;
-
-
-
-            // Get target course, and its context
-            if (false === ($course_rec = $this->moodleDB->get_record(self::MOODLENT_COURSE, array('idnumber' => $section_source_id)))) {
-                $this->log_process_message(self::MOODLENT_COURSE, $section_source_id, 'select', get_string('ERR_COURSE_IDNUMBER', self::PLUGIN_NAME));
-                return false;
-            }
-
-            // Get this plugin's enrol instance for the course
-            if (false === ($enrol_instance = $this->moodleDB->get_record(self::MOODLENT_ENROL, array('courseid' => $course_rec->id, 'enrol' => $this->enrol_plugin->get_name(), 'status' => ENROL_INSTANCE_ENABLED)))) {
-                $this->log_process_message(self::MOODLENT_ENROL, $course_rec->id, 'select', get_string('ERR_RECORDNOTFOUND', self::PLUGIN_NAME));
-                return false;
-            }
-
-            // Find the appropriate role mapping
-            if (false === ($role_id = $this->get_role_mapping($ims_role_type))) {
-                $this->log_process_message(self::MOODLENT_ROLE_ASSIGNMENT, $ims_role_type, 'select', get_string('ERR_ENROLL_ROLETYPE_NOMAP', self::PLUGIN_NAME));
-                return false;
-            }
-
-            // Fetch the user by joining with the staging record
-            // which has both the Luminis source id and Moodle
-            // user id values
-            $query = "SELECT u.* "
-                   . "  FROM {" . self::MOODLENT_USER . "} u "
-                   . " INNER JOIN {" . self::SHEBANGENT_PERSON . "} p "
-                   . "    ON p.userid_moodle = u.id "
-                   . " WHERE p.source_id = :source_id AND u.deleted = 0";
-            $parms = array('source_id' => $person_source_id);
-
-            if (false === ($user_rec = $this->moodleDB->get_record_sql($query, $parms))) {
-                $this->log_process_message(self::MOODLENT_USER, $person_source_id, 'select', get_string('ERR_PERSON_SOURCE_ID', self::PLUGIN_NAME));
-                return false;
-            }
-
-            try
-            {
-                if ($unenroll) {
-                    // If the role recstatus attribute or member status
-                    // sub-element indicated to unenroll this user
-                    $op = 'unenrol';
-                    $this->enrol_plugin->unenrol_user($enrol_instance, $user_rec->id);
-                } else {
-                    // Otherwise, enroll or update current enrollment
-                    $op = 'enrol';
-                    $this->enrol_plugin->enrol_user($enrol_instance, $user_rec->id, $role_id, 0, 0, $suspend ? ENROL_USER_SUSPENDED : ENROL_USER_ACTIVE);
-                    if ($group_id && !empty($this->config->crosslist_groups)) {
-                        groups_add_member($group_id, $user_rec->id);
-                    }
-                }
-                $rc = true;
-            }
-            catch (Exception $exc)
-            {
-                $this->log_process_exception($exc);
-                $rc = false;
-            }
-
-            $this->log_process_message(self::MOODLENT_USER_ENROL, "{$enrol_instance->courseid}:{$role_id}:{$user_rec->id}", $op, $rc);
-            return $rc;
-
-        } // process_user_enrollment
 
 
 
@@ -2489,6 +2381,8 @@
          */
         private function create_course(stdClass $data)
         {
+            global $DB;
+
 
             // Normally an application-level RI check for category
             // is done, but that is handled by the calling routine
@@ -2570,8 +2464,14 @@
             // Setup the blocks
             blocks_add_default_course_blocks($course);
 
-            // Create a default section.
-            course_create_sections_if_missing($course, 0);
+            // Create a default section, and additional ones
+            // if needed.
+            $numsections = isset($data->numsections) ? $data->numsections : 0;
+            $existingsections = $DB->get_fieldset_sql('SELECT section FROM {course_sections} WHERE course = ?', array($newcourseid));
+            $newsections = array_diff(range(0, $numsections), $existingsections);
+            foreach ($newsections as $sectionnum) {
+                course_create_section($newcourseid, $sectionnum, true);
+            }
 
             // Save any custom role names. We don't do this
             //save_local_role_names($course->id, (array)$data);
@@ -2585,6 +2485,7 @@
             //}
 
             return $course;
+
         }
 
 
@@ -2671,32 +2572,25 @@
         /**
          * Checks the last time a message arrived and if needed sends a notification
          *
-         * @access  private
          * @return  void
          * @uses    $SITE
          */
-        public function cron_monitor_activity()
+        public function monitor_activity()
         {
             global $SITE;
 
 
+            mtrace(get_string('INF_CRON_MONITOR_START', self::PLUGIN_NAME));
+
             // If no configs found, don't croak the entire cron run,
             // just leave
-            if (!$this->config) {
+            if (   !$this->config
+                || !isset($this->config->monitor_emails)   || empty($this->config->monitor_emails)) {
                 mtrace(get_string('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME));
                 return;
             }
 
             $this->prepare_logfiles();
-
-            mtrace(get_string('INF_CRON_MONITOR_START', self::PLUGIN_NAME));
-
-            // Check that monitor is enabled
-            if (   !isset($this->config->monitor_weekdays) || empty($this->config->monitor_weekdays)
-                || !isset($this->config->monitor_emails)   || empty($this->config->monitor_emails)) {
-                mtrace(get_string('INF_CRON_MONITOR_DISABLED', self::PLUGIN_NAME));
-                return;
-            }
 
             // Verify the threshold
             if (!isset($this->config->monitor_threshold) || empty($this->config->monitor_threshold)) {
@@ -2705,44 +2599,6 @@
 
             // Check day of week and time of day
             $timestamp_array = getdate();
-
-            // Admin setting for multicheckbox stored as comma delimited
-            // string of key values.
-            if (!array_key_exists($timestamp_array['wday'], array_fill_keys(explode(',', $this->config->monitor_weekdays), 1))) {
-                mtrace(get_string('INF_CRON_MONITOR_WRONGDAY', self::PLUGIN_NAME));
-                return;
-            }
-
-            $start_timestamp = mktime((int)$this->config->monitor_start_hour,
-                                      (int)$this->config->monitor_start_min,
-                                      0,
-                                      $timestamp_array['mon'],
-                                      $timestamp_array['mday'],
-                                      $timestamp_array['year']);
-            $stop_timestamp  = mktime((int)$this->config->monitor_stop_hour,
-                                      (int)$this->config->monitor_stop_min,
-                                      0,
-                                      $timestamp_array['mon'],
-                                      $timestamp_array['mday'],
-                                      $timestamp_array['year']);
-
-            // If the stop time appears to be earlier than the start time, assume
-            // the stop time is with respect to the following day, i.e. start
-            // sometime tonight, finish tomorrow morning.. t1 is our start time,
-            // and t2 is the stop time
-            if ($stop_timestamp <= $start_timestamp) {
-                // Looking for the no-run period t2 < t < t1
-                if ($stop_timestamp < $timestamp_array[0] && $timestamp_array[0] < $start_timestamp) {
-                    mtrace(get_string('INF_CRON_MONITOR_WRONGTIME', self::PLUGIN_NAME));
-                    return;
-                }
-            } else {
-                // Looking for the opposite of t1 <= t <= t2 -- are we NOT in the window
-                if ($start_timestamp > $timestamp_array[0] || $timestamp_array[0] > $stop_timestamp) {
-                    mtrace(get_string('INF_CRON_MONITOR_WRONGTIME', self::PLUGIN_NAME));
-                    return;
-                }
-            }
 
             // When was the last message received. Use the log file info
             $minutes_lapsed = floor(($timestamp_array[0] - filemtime($this->messageLogPath)) / 60);
@@ -2843,9 +2699,7 @@
 
             }
             catch (Exception $exc) {
-
                 $this->log_process_exception($exc);
-
             }
 
         } // notify_message_error
