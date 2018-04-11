@@ -317,6 +317,12 @@
             $this->config           = get_config(self::PLUGIN_NAME);
             $this->enrol_plugin     = enrol_get_plugin('shebang');
 
+            // Parse the course term filter
+            $this->config->term_filters = array();
+            if (!empty($this->config->course_term_filter)) {
+                $this->config->term_filters = array_map('trim', explode(',', $this->config->course_term_filter));
+            }
+
         } // __construct
 
 
@@ -1085,6 +1091,11 @@
             $lmb_data->update_date       = date(self::DATEFMT_SQL_VALUE);
 
 
+            // Check if filtering by term
+            if (!empty($this->config->term_filters) && !in_array($lmb_data->term, $this->config->term_filters)) {
+                $this->log_process_message(self::SHEBANGENT_SECTION, $lmb_data->term, "", get_string('INF_COURSE_TERM_FILTERED', self::PLUGIN_NAME));
+                return true;
+            }
 
             // Validate the source_id
             if (empty($lmb_data->source_id)) {
@@ -1093,9 +1104,11 @@
             }
 
             // If recstatus not present, default is add (1)
-            if (!isset($lmb_data->recstatus) || empty($lmb_data->recstatus)) $lmb_data->recstatus = self::RECSTATUS_ADD;
+            if (!isset($lmb_data->recstatus) || empty($lmb_data->recstatus)) {
+                $lmb_data->recstatus = self::RECSTATUS_ADD;
+            }
 
-
+            // Clean the parent course id
             if ($this->config->course_parent_striplead) {
                 $lmb_data->course_source_id = substr($lmb_data->course_source_id, $this->config->course_parent_striplead);
             }

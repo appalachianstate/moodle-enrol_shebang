@@ -215,8 +215,9 @@
         /*
          * Course-section (group) messages
          */
-        $settings->add(new admin_setting_heading("{$plugin->component}_course",               get_string('LBL_COURSE',          $plugin->component) . $OUTPUT->help_icon('LBL_COURSE', $plugin->component), ''));
-        $settings->add(new admin_setting_configselect("{$plugin->component}/course_category", get_string('LBL_COURSE_CATEGORY', $plugin->component), '', enrol_shebang_processor::OPT_COURSE_CATEGORY_TERM,
+        $settings->add(new admin_setting_heading("{$plugin->component}_course",                get_string('LBL_COURSE',             $plugin->component) . $OUTPUT->help_icon('LBL_COURSE', $plugin->component), ''));
+        $settings->add(new admin_setting_configtext("{$plugin->component}/course_term_filter", get_string('LBL_COURSE_TERM_FILTER', $plugin->component), '', ''));
+        $settings->add(new admin_setting_configselect("{$plugin->component}/course_category",  get_string('LBL_COURSE_CATEGORY',    $plugin->component), '', enrol_shebang_processor::OPT_COURSE_CATEGORY_TERM,
           array(
             enrol_shebang_processor::OPT_COURSE_CATEGORY_TERM => get_string('LBL_COURSE_CATEGORY_TERM', $plugin->component),
             enrol_shebang_processor::OPT_COURSE_CATEGORY_DEPT => get_string('LBL_COURSE_CATEGORY_DEPT', $plugin->component),
