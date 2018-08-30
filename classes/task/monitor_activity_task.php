@@ -57,9 +57,9 @@
                 $processor = new \enrol_shebang_processor();
                 $processor->monitor_activity();
             }
-            catch (Exception $exc) {
+            catch (\Exception $exc) {
                 $info = get_exception_info($exc);
-                mtrace(bootstrap_renderer::early_error($info->message, $info->moreinfourl, $info->link, $info->backtrace, $info->debuginfo, $info->errorcode));
+                mtrace(\bootstrap_renderer::early_error($info->message, $info->moreinfourl, $info->link, $info->backtrace, $info->debuginfo, $info->errorcode));
             }
 
         }

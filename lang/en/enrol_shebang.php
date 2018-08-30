@@ -57,12 +57,8 @@ $string['LBL_SECURE_METHOD_DIGEST']         = 'Digest';
 
 
 $string['LBL_MONITOR']                      = 'Monitoring';
-$string['LBL_MONITOR_WEEKDAYS']             = 'Weekdays to monitor';
-$string['LBL_MONITOR_START']                = 'Begin monitoring at';
-$string['LBL_MONITOR_STOP']                 = 'Cease monitoring at';
 $string['LBL_MONITOR_THRESHOLD']            = 'Begin notifications after';
 $string['LBL_MONITOR_EMAILS']               = 'Notify email address(es)';
-$string['LBL_MONITOR_USECOMMAS']            = 'Use commas (,) to separate addresses';
 
 
 $string['LBL_PERSON']                       = 'Person Messages';
@@ -209,6 +205,7 @@ $string['INF_TOOLS_IMPORT_PROGRESS']        = '{$a->blocks_read} of {$a->blocks_
 $string['INF_TOOLS_IMPORT_FILENOTFOUND']    = 'File specified was not found';
 
 
+$string['INF_CRON_MONITOR_ALERT']           = 'Monitor Task Alert';
 $string['INF_CRON_MONITOR_START']           = 'SHEBanG cron: Monitor task begins.';
 $string['INF_CRON_MONITOR_FINISH']          = 'SHEBanG cron: Monitor task finished.';
 $string['INF_CRON_MONITOR_MSGTHRESHOLD']    = 'SHEBanG cron: Last message time threshold not exceeded. Exiting.';
