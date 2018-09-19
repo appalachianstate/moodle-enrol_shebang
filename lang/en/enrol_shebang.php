@@ -28,7 +28,7 @@
 
 /* CONFIG STRINGS */
 $string['pluginname']                       = 'SHEBanG';
-$string['description']                      = '<p style="text-align: justify">{$a->a}<br /><br />This enrollment plugin provides a way to consume SunGard HE Banner&reg; messages generated from Luminis Message Broker. This module is not a SunGard product, and is neither endorsed nor supported by SunGard. This module is provided as is, with no warranties or guarantees, either express or implied. Use it at your own risk.<br /><br />Please review the README.txt file in the plugin directory for information concerning security and performance issues. Do not enable this plugin until you have secured access to the post.php script.<br /><br />To perform administrative tasks use the <a href="{$a->b}">Admin. Utilities</a>.</p>';
+$string['description']                      = '<p style="text-align: justify">{$a->a}<br /><br />This enrol plugin provides a way to consume Banner&reg; messages generated from Luminis Message Broker. This plugin is not an Ellucian (formerly SunGard HE) product, and is neither endorsed nor supported by Ellucian. This module is provided as is, with no warranties or guarantees, either express or implied. Use it at your own risk.<br /><br />Please review the README.md file in the plugin directory for information concerning security and performance issues. Do not enable this plugin until you have secured access to the post.php script.<br /><br />To perform administrative tasks use the <a href="{$a->b}">Admin. Utilities</a>.</p>';
 $string['monitor_activity_task_name']       = 'SHEBanG Monitor Activity Task';
 
 $string['LBL_VERSION']                      = 'SHEBanG Enrollment Plugin Version {$a}';
