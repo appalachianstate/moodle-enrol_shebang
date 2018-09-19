@@ -828,14 +828,10 @@
             }
 
             $attr_list = '';
-            if ($attrs) {
-                reset($attrs);
-                while (false !== ($keyval = each($attrs))) {
-                    list($key, $val) = $keyval;
-                    // Revert any '&' back to '&amp;' so the
-                    // text can be put into an XMLDocument
-                    $attr_list .= " {$key}=\"" . preg_replace(array('/</', '/>/', '/&/'), array('&lt;', '&gt;', '&amp;'), $val) . "\"";
-                }
+            foreach ($attrs as $key => $val) {
+                // Revert any '&' back to '&amp;' so the
+                // text can be put into an XMLDocument
+                $attr_list .= " {$key}=\"" . preg_replace(array('/</', '/>/', '/&/'), array('&lt;', '&gt;', '&amp;'), $val) . "\"";
             }
             $this->parseDataBuffer .= "<{$name}{$attr_list}>";
 
