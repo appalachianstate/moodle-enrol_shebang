@@ -28,7 +28,6 @@
     require     (dirname(__FILE__) . '/version.php');
     require_once(dirname(__FILE__) . '/locallib.php');
     require_once("{$CFG->libdir}/accesslib.php");
-    require_once("{$CFG->libdir}/coursecatlib.php");
 
 
 
@@ -225,7 +224,7 @@
             enrol_shebang_processor::OPT_COURSE_CATEGORY_PICK => get_string('LBL_COURSE_CATEGORY_PICK', $plugin->component)
           )));
 
-        $categoryArray = coursecat::make_categories_list();
+        $categoryArray = \core_course_category::make_categories_list();
         $settings->add(new admin_setting_configselect("{$plugin->component}/course_category_id",            get_string('LBL_COURSE_CATEGORY_ID',          $plugin->component), '', '1', $categoryArray));
         $settings->add(new admin_setting_configcheckbox("{$plugin->component}/course_sections_equal_weeks", get_string('LBL_COURSE_SECTIONS_EQUAL_WEEKS', $plugin->component), '', '1'));
 
