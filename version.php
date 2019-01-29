@@ -34,8 +34,8 @@
 
     $plugin             = new stdClass();
 
-    $plugin->version    = 2014052006;
-    $plugin->requires   = 2015111600;
-    $plugin->release    = "0.1.6-30 (Build 2018091900)";
+    $plugin->version    = 2019052007;
+    $plugin->requires   = 2018120300;
+    $plugin->release    = "0.1.7-36 (Build 2019012800)";
     $plugin->maturity   = MATURITY_STABLE;
     $plugin->component  = 'enrol_shebang';

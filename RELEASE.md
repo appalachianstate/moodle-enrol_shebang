@@ -1,3 +1,7 @@
+##### 2019052007:0.1.7-36 - 2019-01-28
+
+Branched for Moodle 3.6, remove deprecated coursecat calls, use core_course_category
+
 ##### 2014052006:0.1.6-30 - 2018-09-19
 
 Update RELEASE and README docs.
