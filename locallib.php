@@ -1266,7 +1266,7 @@
                         'enrolenddate'   => empty($lmb_data->end_date)   ? 0 : strtotime($lmb_data->end_date)
                 );
                 if (null == $this->enrol_plugin->add_instance($course, $enrol_properties)) {
-                    $this->log_process_message(self::MOODLENT_ENROL, $course->id, 'insert', get_string('ERR_ENROL_INSERT', PLUGIN_NAME));
+                    $this->log_process_message(self::MOODLENT_ENROL, $course->id, 'insert', get_string('ERR_ENROL_INSERT', self::PLUGIN_NAME));
                     return false;
                 }
             }
