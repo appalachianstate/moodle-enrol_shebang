@@ -2412,6 +2412,16 @@
             //    }
             //}
 
+            // Not using wholesale relative dates
+            // if (empty($CFG->enablecourserelativedates)) {
+            //   // Make sure we're not setting the relative dates mode when the setting is disabled.
+            //   unset($data->relativedatesmode);
+            // }
+            //
+            // if ($errorcode = course_validate_dates((array)$data)) {
+            //   throw new moodle_exception($errorcode);
+            // }
+
             $data->timecreated  = time();
             $data->timemodified = $data->timecreated;
 
@@ -2492,6 +2502,16 @@
             //if ($CFG->usetags && isset($data->tags)) {
             //    tag_set('course', $course->id, $data->tags, 'core', context_course::instance($course->id)->id);
             //}
+
+            // No form data means no custom fields
+            // Save custom fields if there are any of them in the form.
+            //$handler = core_course\customfield\course_handler::create();
+            // Make sure to set the handler's parent context first.
+            //$coursecatcontext = context_coursecat::instance($category->id);
+            //$handler->set_parent_context($coursecatcontext);
+            // Save the custom field data.
+            //$data->id = $course->id;
+            //$handler->instance_form_save($data, true);
 
             return $course;
 
