@@ -44,8 +44,8 @@
     require_once (dirname(__FILE__) . '/../locallib.php');
 
     if (!defined('SHEBANG_SECURE_REALM')) define ('SHEBANG_SECURE_REALM', 'SHEBanG Authentication');
-    if (!defined('SHEBANG_HEADER_MSGID')) define ('SHEBANG_HEADER_MSGID', 'HTTP_JMSMESSAGEID');
-    if (!defined('SHEBANG_HEADER_LDISP')) define ('SHEBANG_HEADER_LDISP', 'HTTP_LDISP_ID');
+    if (!defined('SHEBANG_HEADER_MSGID')) define ('SHEBANG_HEADER_MSGID', 'HTTP_RDI_MESSAGE_ID');
+    if (!defined('SHEBANG_HEADER_LDISP')) define ('SHEBANG_HEADER_LDISP', 'HTTP_RDI_MESSAGE_SEQNO');
 
 
     $processor = new enrol_shebang_processor();
