@@ -1,3 +1,17 @@
+##### 2023053000:0.1.9-41 - 2023-05-30
+
+Update RELEASE docs.
+
+Add config for updating SCTID/idnumber.
+
+##### 2023032800:0.1.8-41 - 2023-03-28
+
+Update request headers for latest Luminis version.
+
+No functional change; review create_course compatibility with 3.10.x.
+
+Fix constant in insert_course.
+
 ##### 2019052007:0.1.7-36 - 2019-01-28
 
 Branched for Moodle 3.6, remove deprecated coursecat calls, use core_course_category
