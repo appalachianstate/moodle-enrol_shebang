@@ -91,6 +91,7 @@ $string['LBL_PERSON_TELEPHONE']             = 'Import telephone information';
 $string['LBL_PERSON_TELEPHONE_CHANGES']     = 'Apply changes to telephone on updates';
 $string['LBL_PERSON_ADDRESS']               = 'Import address information';
 $string['LBL_PERSON_ADDRESS_CHANGES']       = 'Apply changes to address on updates';
+$string['LBL_PERSON_SCTID_CHANGES']         = 'Apply changes to SCTID on updates';
 
 
 $string['LBL_PERSON_LOCALITY']              = 'Source field for user\'s city';

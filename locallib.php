@@ -1743,6 +1743,10 @@
                 }
             }
 
+            if ($this->config->person_idnumber_sctid && $this->config->person_sctid_changes) {
+                $user_rec->idnumber = $lmb_data->userid_sctid;
+            }
+
             // Update the existing Moodle user first, then check if any password change
             // is needed, and do that secondly through the associated auth plugin
             $rc = true;

@@ -208,6 +208,7 @@
         $settings->add(new admin_setting_configtext("{$plugin->component}/person_locality_default",    get_string('LBL_PERSON_LOCALITY_DEFAULT',  $plugin->component), '', ''));
         $settings->add(new admin_setting_configselect("{$plugin->component}/person_country",           get_string('LBL_PERSON_COUNTRY',           $plugin->component), '', enrol_shebang_processor::DEF_PERSON_COUNTRY, get_string_manager()->get_list_of_countries()));
         $settings->add(new admin_setting_configcheckbox("{$plugin->component}/person_idnumber_sctid",  get_string('LBL_PERSON_IDNUMBER_SCTID',    $plugin->component), '', '0'));
+        $settings->add(new admin_setting_configcheckbox("{$plugin->component}/person_sctid_changes",   get_string('LBL_PERSON_SCTID_CHANGES',     $plugin->component), '', '0'));
         $settings->add(new admin_setting_configcheckbox("{$plugin->component}/person_nickname_prefer", get_string('LBL_PERSON_NICKNAME_PREFER',   $plugin->component), '', '0'));
         $settings->add(new admin_setting_configcheckbox("{$plugin->component}/person_fullname_desc",   get_string('LBL_PERSON_FULLNAME_DESC',     $plugin->component), '', '1'));
 
