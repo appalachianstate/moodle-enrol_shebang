@@ -2610,7 +2610,7 @@
          */
         public function monitor_activity()
         {
-            global $SITE;
+            global $SITE, $DB;
 
 
             mtrace(get_string('INF_CRON_MONITOR_START', self::PLUGIN_NAME));
@@ -2648,17 +2648,12 @@
             }
 
             // Send a notice
-            $user = new stdClass();
-            $user->mailformat = 0;
-
             $email_address_array = preg_split('/[,;]/', $this->config->monitor_emails);
             foreach ($email_address_array as $email_address) {
                 $email_address = trim($email_address);
                 if (empty($email_address) || !validate_email($email_address))
                     continue;
-                $user->firstname = "SHEBanG Monitor";
-                $user->lastname  = "Recipient:{$email_address}";
-                $user->email     = trim($email_address);
+                $user = $DB->get_record('user', array('email' => $email_address));
                 email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Monitor Notice", "SHEBanG Monitor Notice: {$minutes_lapsed} minutes have passed since the last LMB message arrived.");
                 mtrace(get_string('INF_CRON_MONITOR_NOTICESENT', self::PLUGIN_NAME, $email_address));
             }
@@ -2682,7 +2677,7 @@
          */
         private function notify_message_error($msg_id)
         {
-            global $SITE;
+            global $SITE, $DB;
 
 
 
@@ -2716,17 +2711,12 @@
                     $this->moodleDB->update_record('config_plugins', $config_rec);
                 }
 
-                $user = new stdClass();
-                $user->mailformat = 0;
-
                 $email_address_array = preg_split('/[,;]/', $this->config->responses_emails);
                 foreach ($email_address_array as $email_address) {
                     $email_address = trim($email_address);
                     if (empty($email_address) || !validate_email($email_address))
                         continue;
-                    $user->firstname = "SHEBanG Processing Error";
-                    $user->lastname  = "Recipient:{$email_address}";
-                    $user->email     = trim($email_address);
+                    $user = $DB->get_record('user', array('email' => $email_address));
                     email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Processing Error", "SHEBanG Processing Error: Failed to process message with Id {$msg_id}.");
                 }
 
