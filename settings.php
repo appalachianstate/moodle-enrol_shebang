@@ -150,7 +150,7 @@
          */
         $settings->add(new admin_setting_heading("{$plugin->component}_monitor",                get_string('LBL_MONITOR',           $plugin->component) . $OUTPUT->help_icon('LBL_MONITOR', $plugin->component), ''));
         $settings->add(new admin_setting_configselect("{$plugin->component}/monitor_threshold", get_string('LBL_MONITOR_THRESHOLD', $plugin->component), get_string('HELP_MONITOR_THRESHOLD', $plugin->component), enrol_shebang_processor::DEF_MONITOR_THRESHOLD,
-            array('15' => '15', '30' => '30', '45' => '45', '60' => '60', '120' => '120', '180' => '180', '240' => '240')));
+            array('15' => '15', '30' => '30', '45' => '45', '60' => '60', '120' => '120', '180' => '180', '240' => '240', '1440' => '1440')));
         $settings->add(new admin_setting_configtext("{$plugin->component}/monitor_emails",      get_string('LBL_MONITOR_EMAILS',    $plugin->component), get_string('HELP_MONITOR_EMAILS',    $plugin->component), ''));
 
 
