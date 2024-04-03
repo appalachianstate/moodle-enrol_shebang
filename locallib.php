@@ -2654,7 +2654,8 @@
                 if (empty($email_address) || !validate_email($email_address))
                     continue;
                 $user = $DB->get_record('user', array('email' => $email_address));
-                email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Monitor Notice", "SHEBanG Monitor Notice: {$minutes_lapsed} minutes have passed since the last LMB message arrived.");
+                $hostname = gethostname();
+                email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Monitor Notice", "SHEBanG Monitor Notice: {$minutes_lapsed} minutes have passed since the last LMB message arrived on {$hostname}.");
                 mtrace(get_string('INF_CRON_MONITOR_NOTICESENT', self::PLUGIN_NAME, $email_address));
             }
 
@@ -2717,7 +2718,8 @@
                     if (empty($email_address) || !validate_email($email_address))
                         continue;
                     $user = $DB->get_record('user', array('email' => $email_address));
-                    email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Processing Error", "SHEBanG Processing Error: Failed to process message with Id {$msg_id}.");
+                    $hostname = gethostname();
+                    email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Processing Error", "SHEBanG Processing Error: Failed to process message with Id {$msg_id} on {$hostname}.");
                 }
 
             }
