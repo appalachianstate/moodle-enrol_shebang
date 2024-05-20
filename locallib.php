@@ -1463,10 +1463,12 @@
                 case self::OPT_PERSON_USERNAME_USERID_LOGON:
                 case self::OPT_PERSON_USERNAME_USERID_SCTID:
                     $field = $this->config->person_username;
-                    $username = trim($lmb_data->$field);
+                    $person_username = $lmb_data->$field ?? '';
+                    $username = trim($person_username);
                     break;
                 default:
-                    $username = trim($lmb_data->userid_logon);
+                    $person_username = $lmb_data->userid_logon ?? '';
+                    $username = trim($person_username);
             }
             if (empty($username)) {
                 if ($this->config->person_username_failsafe) {
