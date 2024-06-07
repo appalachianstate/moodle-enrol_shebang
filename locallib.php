@@ -472,6 +472,16 @@
                 fwrite($this->messageLogRes, "\n");
             }
 
+            // Tickle the modified file for this server for monitor_activity scheduled task.
+            global $CFG;
+            $hostname = gethostname();
+            $monitoring_dirpath = $CFG->dataroot . "/" . self::PLUGIN_NAME;
+            if (!file_exists($monitoring_dirpath)) {
+                $monitoring_dirpath = make_writable_directory($CFG->dataroot . "/" . self::PLUGIN_NAME, false);
+            }
+            $last_modified_file = "{$monitoring_dirpath}/.shebang-last-modified-{$hostname}";
+            touch($last_modified_file);
+
             // If unlock fails (can it?) we got big problems,
             // so handle that here and die quickly
             if (!$keep_lock) {
@@ -2612,7 +2622,7 @@
          */
         public function monitor_activity()
         {
-            global $SITE, $DB;
+            global $SITE, $DB, $CFG;
 
 
             mtrace(get_string('INF_CRON_MONITOR_START', self::PLUGIN_NAME));
@@ -2635,17 +2645,43 @@
             // Check day of week and time of day
             $timestamp_array = getdate();
 
-            // When was the last message received. Use the log file info
-            $minutes_lapsed = floor(($timestamp_array[0] - filemtime($this->messageLogPath)) / 60);
-            if ($minutes_lapsed < ((int)$this->config->monitor_threshold)) {
-                mtrace(get_string('INF_CRON_MONITOR_MSGTHRESHOLD', self::PLUGIN_NAME));
-                return;
-            }
+            // When was the last message received. Use the modified notice file.
+            $monitoring_dirpath = $CFG->dataroot . "/" . self::PLUGIN_NAME;
+            if (file_exists($monitoring_dirpath)) {
+                $files = scandir($monitoring_dirpath, SCANDIR_SORT_DESCENDING);
+                mtrace('files ' . print_r($files, true));
+                //$newest_file = $files[0];
+                $found_modified_file = false;
+                $i = 0;
+                while (!$found_modified_file && $i < count($files)) {
+                    if (str_contains($files[$i], '.shebang-last-modified-')) {
+                        $found_modified_file = true;
+                        break;
+                    }
+                    $i++;
+                }
 
-            // Was the last notification less than the fixed interval
-            $last_notice_file = "{$this->logging_dirpath}/.shebang-monitor-last-notice";
-            if (file_exists($last_notice_file) && (floor(($timestamp_array[0] - filemtime($last_notice_file)) / 60)) < self::MONITOR_NOTICES_INTERVAL) {
-                mtrace(get_string('INF_CRON_MONITOR_NOTICETHRESHOLD', self::PLUGIN_NAME));
+                if ($found_modified_file) {
+                    $minutes_lapsed = floor(($timestamp_array[0] - filemtime($monitoring_dirpath . '/' . $files[$i])) / 60);
+                    if ($minutes_lapsed < ((int)$this->config->monitor_threshold)) {
+                        mtrace(get_string('INF_CRON_MONITOR_MSGTHRESHOLD', self::PLUGIN_NAME));
+                        return;
+                    }
+                } else {
+                    mtrace('No modified file found.');
+                    return;
+                }
+
+                // Was the last notification less than the fixed interval
+                //$last_notice_file = "{$this->logging_dirpath}/.shebang-monitor-last-notice";
+                $last_notice_file = "{$monitoring_dirpath}/.shebang-monitor-last-notice";
+                if (file_exists($last_notice_file) && (floor(($timestamp_array[0] - filemtime($last_notice_file)) / 60)) < self::MONITOR_NOTICES_INTERVAL) {
+                    mtrace(get_string('INF_CRON_MONITOR_NOTICETHRESHOLD', self::PLUGIN_NAME));
+                    return;
+                }
+            } else {
+                //mtrace(get_string('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME));
+                // Log that monitoring directory does not exist.
                 return;
             }
 
@@ -2655,9 +2691,8 @@
                 $email_address = trim($email_address);
                 if (empty($email_address) || !validate_email($email_address))
                     continue;
-                $user = $DB->get_record('user', array('email' => $email_address));
-                $hostname = gethostname();
-                email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Monitor Notice", "SHEBanG Monitor Notice: {$minutes_lapsed} minutes have passed since the last LMB message arrived on {$hostname}.");
+                $user = $DB->get_record('user', ['email' => $email_address]);
+                email_to_user($user, get_admin(), $SITE->shortname . ", SHEBanG Monitor Notice", "SHEBanG Monitor Notice: {$minutes_lapsed} minutes have passed since the last LMB message arrived.");
                 mtrace(get_string('INF_CRON_MONITOR_NOTICESENT', self::PLUGIN_NAME, $email_address));
             }
 
