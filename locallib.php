@@ -2646,46 +2646,45 @@
             $timestamp_array = getdate();
 
             // When was the last message received. Use the modified notice file.
-            $monitoring_dirpath = $CFG->dataroot . "/" . self::PLUGIN_NAME;
-            if (file_exists($monitoring_dirpath)) {
-                $files = scandir($monitoring_dirpath, SCANDIR_SORT_DESCENDING);
-                mtrace('files ' . print_r($files, true));
-                //$newest_file = $files[0];
-                $found_modified_file = false;
-                $i = 0;
-                while (!$found_modified_file && $i < count($files)) {
-                    if (str_contains($files[$i], '.shebang-last-modified-')) {
-                        $found_modified_file = true;
-                        break;
+            $monitoringDirpath = $CFG->dataroot . "/" . self::PLUGIN_NAME;
+            if (file_exists($monitoringDirpath)) {
+                // Scan through modified notice files to find last modified.
+                $files = scandir($monitoringDirpath, SCANDIR_SORT_DESCENDING);
+                $lastModified = 0;
+                $newestFile = '';
+                foreach ($files as $file) {
+                    if (str_contains($file, '.shebang-last-modified-')) {
+                        $newModified = filemtime($monitoringDirpath . '/' . $file);
+                        if ($newModified > $lastModified) {
+                            $lastModified = $newModified;
+                            $newestFile = $file;
+                        }
                     }
-                    $i++;
                 }
 
-                if ($found_modified_file) {
-                    $minutes_lapsed = floor(($timestamp_array[0] - filemtime($monitoring_dirpath . '/' . $files[$i])) / 60);
+                if ($lastModified > 0 && $newestFile !== '') {
+                    $minutes_lapsed = floor(($timestamp_array[0] - filemtime($monitoringDirpath . '/' . $newestFile)) / 60);
                     if ($minutes_lapsed < ((int)$this->config->monitor_threshold)) {
                         mtrace(get_string('INF_CRON_MONITOR_MSGTHRESHOLD', self::PLUGIN_NAME));
                         return;
                     }
                 } else {
-                    mtrace('No modified file found.');
+                    mtrace(get_string('INF_CRON_MONITOR_NOMODIFIEDFILE', self::PLUGIN_NAME));
                     return;
                 }
 
-                // Was the last notification less than the fixed interval
-                //$last_notice_file = "{$this->logging_dirpath}/.shebang-monitor-last-notice";
-                $last_notice_file = "{$monitoring_dirpath}/.shebang-monitor-last-notice";
+                // Was the last notification less than the fixed interval?
+                $last_notice_file = "{$monitoringDirpath}/.shebang-monitor-last-notice";
                 if (file_exists($last_notice_file) && (floor(($timestamp_array[0] - filemtime($last_notice_file)) / 60)) < self::MONITOR_NOTICES_INTERVAL) {
                     mtrace(get_string('INF_CRON_MONITOR_NOTICETHRESHOLD', self::PLUGIN_NAME));
                     return;
                 }
             } else {
-                //mtrace(get_string('ERR_CONFIGS_NOTSET', self::PLUGIN_NAME));
-                // Log that monitoring directory does not exist.
+                mtrace(get_string('INF_CRON_MONITOR_NOMONITORDIRPATH', self::PLUGIN_NAME));
                 return;
             }
 
-            // Send a notice
+            // Send a notice.
             $email_address_array = preg_split('/[,;]/', $this->config->monitor_emails);
             foreach ($email_address_array as $email_address) {
                 $email_address = trim($email_address);
@@ -2696,7 +2695,7 @@
                 mtrace(get_string('INF_CRON_MONITOR_NOTICESENT', self::PLUGIN_NAME, $email_address));
             }
 
-            // Tickle the last notice file
+            // Tickle the last notice file.
             touch($last_notice_file);
 
             mtrace(get_string('INF_CRON_MONITOR_FINISH', self::PLUGIN_NAME));

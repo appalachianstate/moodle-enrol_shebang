@@ -212,6 +212,8 @@ $string['INF_CRON_MONITOR_FINISH']          = 'SHEBanG cron: Monitor task finish
 $string['INF_CRON_MONITOR_MSGTHRESHOLD']    = 'SHEBanG cron: Last message time threshold not exceeded. Exiting.';
 $string['INF_CRON_MONITOR_NOTICETHRESHOLD'] = 'SHEBanG cron: Last notice time threshold not exceeded. Exiting.';
 $string['INF_CRON_MONITOR_NOTICESENT']      = 'SHEBanG cron: Email notice sent to {$a}.';
+$string['INF_CRON_MONITOR_NOMONITORDIRPATH']= 'SHEBanG cron: Monitor directory does not exist. Exiting.';
+$string['INF_CRON_MONITOR_NOMODIFIEDFILE']  = 'SHEBanG cron: No last modified file exists. Exiting.';
 
 
 /* HELP STRINGS */
