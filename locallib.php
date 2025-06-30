@@ -1086,10 +1086,21 @@
             $lmb_data->insert_date       =
             $lmb_data->update_date       = date(self::DATEFMT_SQL_VALUE);
 
-
             // Check if filtering by term
             if (!empty($this->config->term_filters) && !in_array($lmb_data->term, $this->config->term_filters)) {
                 $this->log_process_message(self::SHEBANGENT_SECTION, $lmb_data->term, "", get_string('INF_COURSE_TERM_FILTERED', self::PLUGIN_NAME));
+                return true;
+            }
+
+            // Get the section number of desc_long
+            $sectionNumber = substr($lmb_data->desc_long, -3);
+
+            // Check if the first character of the last three is '8' or '9'
+            $firstOfSection = substr($sectionNumber, 0, 1);
+
+            // Don't create section 8xx courses (PKH)
+            if ($firstOfSection === '8') {
+                $this->log_process_message(self::SHEBANGENT_SECTION, $lmb_data->desc_long, "", get_string('INF_COURSE_SECTION_FILTERED', self::PLUGIN_NAME));
                 return true;
             }
 

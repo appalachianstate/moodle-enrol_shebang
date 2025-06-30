@@ -200,6 +200,7 @@ $string['INF_USERDELETE_NOACTION']          = 'No action taken for delete user r
 $string['INF_USERCREATE_NOACTION']          = 'No action taken for create user';
 $string['INF_COURSEDELETE_NOACTION']        = 'No action taken for course delete';
 $string['INF_COURSE_TERM_FILTERED']         = 'Course term filtered';
+$string['INF_COURSE_SECTION_FILTERED']      = 'Course section filtered';
 
 
 $string['INF_TOOLS_IMPORT_PROGRESS']        = '{$a->blocks_read} of {$a->blocks_total} blocks read';
